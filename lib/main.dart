@@ -5,7 +5,6 @@ import 'package:app_links/app_links.dart';
 import 'package:phisguard/splash_screen.dart';
 import 'package:phisguard/url_safety_screen.dart';
 
-import 'home_screen.dart';
 
 void main() => runApp(const MyApp());
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'onboarding_screen1.dart';
 import 'onboarding_screen2.dart';
 import 'onboarding_screen3.dart';
-import '../home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -13,7 +12,6 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
-  int _currentIndex = 0;
 
   final List<Widget> _onboardingPages = [
     OnboardingPageOne(),
@@ -32,7 +30,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               itemCount: _onboardingPages.length,
               onPageChanged: (index) {
                 setState(() {
-                  _currentIndex = index;
                 });
               },
               itemBuilder: (context, index) {

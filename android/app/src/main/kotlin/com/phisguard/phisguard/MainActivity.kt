@@ -1,34 +1,29 @@
 package com.phisguard.phisguard
 
-import android.content.Context
 import android.content.Intent
-import android.provider.Settings
-import android.webkit.WebView
+import android.content.pm.PackageManager
+import android.net.Uri
 import io.flutter.embedding.android.FlutterActivity
-import io.flutter.plugin.common.MethodCall
+import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "default_browser_channel"
+    private val CHANNEL = "com.phisguard.phisguard/default_browser"
 
-    override fun configureFlutterEngine(flutterEngine: io.flutter.embedding.engine.FlutterEngine) {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
-            .setMethodCallHandler { call, result ->
-                if (call.method == "isDefaultBrowser") {
-                    val isDefault = isDefaultBrowser()
-                    result.success(isDefault)
-                } else {
-                    result.notImplemented()
-                }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+            if (call.method == "isDefaultBrowser") {
+                result.success(isDefaultBrowser())
+            } else {
+                result.notImplemented()
             }
+        }
     }
 
     private fun isDefaultBrowser(): Boolean {
-        val defaultBrowserPackage = packageManager.resolveActivity(
-            Intent(Intent.ACTION_VIEW, android.net.Uri.parse("http://")),
-            0
-        )?.activityInfo?.packageName
-        return defaultBrowserPackage == packageName
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("http://"))
+        val resolveInfo = packageManager.resolveActivity(browserIntent, PackageManager.MATCH_DEFAULT_ONLY)
+        return resolveInfo?.activityInfo?.packageName == packageName
     }
 }
