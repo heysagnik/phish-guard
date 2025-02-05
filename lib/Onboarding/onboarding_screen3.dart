@@ -38,8 +38,9 @@ class OnboardingPageThree extends StatelessWidget {
                   try {
                     // Optionally request SYSTEM_ALERT_WINDOW permission.
                     var status = await Permission.systemAlertWindow.status;
-                    if (!status.isGranted)
+                    if (!status.isGranted) {
                       await Permission.systemAlertWindow.request();
+                    }
 
                     // Launch the system default apps settings so user can set PhishGuard as default.
                     const AndroidIntent intent = AndroidIntent(
@@ -121,17 +122,17 @@ class OnboardingPageThree extends StatelessWidget {
               child: TextButton(
                 onPressed: () => _showDefaultBrowserDialog(context),
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
+                  backgroundColor: WidgetStateProperty.all(
                     const Color(0xFF2A35FF),
                   ),
-                  shape: MaterialStateProperty.all(
+                  shape: WidgetStateProperty.all(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(23),
                     ),
                   ),
-                  elevation: MaterialStateProperty.all(8),
-                  overlayColor: MaterialStateProperty.resolveWith(
-                    (states) => states.contains(MaterialState.pressed)
+                  elevation: WidgetStateProperty.all(8),
+                  overlayColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.pressed)
                         ? Colors.white.withOpacity(0.1)
                         : null,
                   ),

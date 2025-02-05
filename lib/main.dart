@@ -5,7 +5,6 @@ import 'package:app_links/app_links.dart';
 import 'package:phisguard/splash_screen.dart';
 import 'package:phisguard/url_safety_screen.dart';
 
-
 void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
@@ -36,18 +35,19 @@ class _MyAppState extends State<MyApp> {
     _appLinks = AppLinks();
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       debugPrint('onAppLink: $uri');
-      _navigatorKey.currentState?.push(
+      _navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => URLSafetyScreen(url: uri.toString()),
         ),
+        (Route<dynamic> route) => false,
       );
     });
   }
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    debugShowCheckedModeBanner: false,
-    navigatorKey: _navigatorKey,
-    home: const SplashScreen(),
-  );
+        debugShowCheckedModeBanner: false,
+        navigatorKey: _navigatorKey,
+        home: const SplashScreen(),
+      );
 }

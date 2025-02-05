@@ -21,8 +21,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();
-    //final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
-    final isFirstLaunch = true;
+    final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
+    //final isFirstLaunch = true;
     // Wait for 3 seconds to show the splash screen
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
@@ -42,7 +42,6 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Use a fully opaque background color (alpha 0xFF)
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: const BoxDecoration(
@@ -50,14 +49,14 @@ class _SplashScreenState extends State<SplashScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF7b74db),
-              Color(0xFF9C27B0),
+              Color(0xFF2C2C54), // Darker purple-blue
+              Color(0xFF4A148C), // Darker purple
             ],
           ),
         ),
         child: Center(
           child: Lottie.asset(
-            'assets/app_logo.json', // Ensure this asset path is correct and declared in pubspec.yaml.
+            'assets/app_logo.json',
             width: 150,
             height: 150,
           ),

@@ -190,16 +190,16 @@ class OnboardingPageOne extends StatelessWidget {
                   );
                 },
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(
+                  backgroundColor: WidgetStateProperty.all(
                     const Color(0xFF2A35FF),
                   ),
-                  shape: MaterialStateProperty.all(
+                  shape: WidgetStateProperty.all(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(23),
                     ),
                   ),
-                  elevation: MaterialStateProperty.all(8),
-                  overlayColor: MaterialStateProperty.resolveWith(
+                  elevation: WidgetStateProperty.all(8),
+                  overlayColor: WidgetStateProperty.resolveWith(
                     (states) => states.contains(MaterialState.pressed)
                         ? Colors.white.withOpacity(0.1)
                         : null,
