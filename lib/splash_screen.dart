@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart'; // Import the lottie package
 import 'package:phisguard/intro_screen.dart';
-import 'onboarding_screen.dart';
+import 'Onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

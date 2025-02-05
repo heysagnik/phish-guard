@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import the flutter_svg package
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phisguard/Onboarding/onboarding_screen1.dart';
-import 'onboarding_screen.dart'; // Import the OnboardingScreen
+import 'Onboarding/onboarding_screen.dart'; // Import the OnboardingScreen
 
 class IntroPage extends StatelessWidget {
   @override
