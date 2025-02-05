@@ -35,12 +35,22 @@ Future<bool> checkUrlSafety(String url) async {
 
 Future<void> _launchUrl(Uri uri, BuildContext context) async {
   try {
-    if (Platform.isAndroid && (uri.scheme == 'https' || uri.scheme == 'http')) {
-      final chromeUrl =
-          'googlechrome://navigate?url=${Uri.encodeFull(uri.toString())}';
-      final chromeUri = Uri.parse(chromeUrl);
+    if ((Platform.isAndroid || Platform.isIOS) &&
+        (uri.scheme == 'https' || uri.scheme == 'http')) {
+      Uri? chromeUri;
+      if (Platform.isAndroid) {
+        final chromeUrl =
+            'googlechrome://navigate?url=${Uri.encodeFull(uri.toString())}';
+        chromeUri = Uri.parse(chromeUrl);
+      } else if (Platform.isIOS) {
+        // For iOS, use 'googlechrome' for http and 'googlechromes' for https URLs.
+        final chromeUrl = uri.scheme == 'http'
+            ? uri.toString().replaceFirst('http', 'googlechrome')
+            : uri.toString().replaceFirst('https', 'googlechromes');
+        chromeUri = Uri.parse(chromeUrl);
+      }
 
-      if (await canLaunchUrl(chromeUri)) {
+      if (chromeUri != null && await canLaunchUrl(chromeUri)) {
         await launchUrl(chromeUri, mode: LaunchMode.externalApplication);
         return;
       }
