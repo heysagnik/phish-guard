@@ -7,22 +7,80 @@ class OnboardingPageTwo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      backgroundColor: Color(0xFF352AD6), // Background color
+      backgroundColor: const Color(0xFF352AD6), // Background color
+      body: Stack(
+        children: [
+          /// Title above the image
+          Positioned(
+            top: screenHeight * 0.15,
+            left: screenWidth * 0.1,
+            right: screenWidth * 0.1,
+            child: Text(
+              "Next-Gen Security\nfor a Safer Future",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+
+          /// Image with Top Border Radius and White Stroke
+          Positioned(
+            bottom: screenHeight * 0.0001, // Adjusted to fit above bottom nav
+            left: (screenWidth - 270) / 2, // Centering the image horizontally
+            child: Container(
+              width: 270,
+              height: 490,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
+                border: Border(
+                  top: const BorderSide(
+                    color: Colors.white, // White stroke on top
+                    width: 5, // Stroke width
+                  ),
+                  left: const BorderSide(
+                    color: Colors.white, // White stroke on left
+                    width: 5, // Stroke width
+                  ),
+                  right: const BorderSide(
+                    color: Colors.white, // White stroke on right
+                    width: 5, // Stroke width
+                  ),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(25),
+                  topRight: Radius.circular(25),
+                ),
+                child: Image.asset(
+                  'assets/home_screen.png', // Replace with your image path
+                  fit: BoxFit.cover, // Ensures the image covers the given dimensions
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: LayoutBuilder(
         builder: (context, constraints) {
-          double screenWidth = MediaQuery.of(context).size.width;
-          double screenHeight = MediaQuery.of(context).size.height;
           return Container(
             height: screenHeight * 0.15,
             padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-            color: Color(0xFFC8C4FD), // Keeping the original background color
+            color: const Color(0xFFC8C4FD), // Keeping the original background color
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                SizedBox(
-                  width: screenWidth * 0.28,
-                ),
+                SizedBox(width: screenWidth * 0.28),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -32,7 +90,7 @@ class OnboardingPageTwo extends StatelessWidget {
                       width: screenWidth * 0.015,
                       height: screenWidth * 0.015,
                       decoration: BoxDecoration(
-                        color: index == 1 ? Color(0xFF352AD6) : Colors.black12,
+                        color: index == 1 ? const Color(0xFF352AD6) : Colors.black12,
                         shape: BoxShape.circle,
                       ),
                     );
@@ -45,22 +103,17 @@ class OnboardingPageTwo extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => OnboardingPageThree()),
+                        MaterialPageRoute(builder: (context) => OnboardingPageThree()),
                       );
                     },
                     style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(
-                        const Color(0xFF2A35FF),
-                      ),
+                      backgroundColor: WidgetStateProperty.all(const Color(0xFF2A35FF)),
                       shape: WidgetStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(23),
-                        ),
+                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(23)),
                       ),
                       elevation: WidgetStateProperty.all(8),
                       overlayColor: WidgetStateProperty.resolveWith(
-                        (states) => states.contains(MaterialState.pressed)
+                            (states) => states.contains(MaterialState.pressed)
                             ? Colors.white.withOpacity(0.1)
                             : null,
                       ),

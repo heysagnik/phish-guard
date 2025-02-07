@@ -61,7 +61,7 @@ class OnboardingPageThree extends StatelessWidget {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  (route) => false,
+                      (route) => false,
                 );
               },
               child: Text(
@@ -80,11 +80,70 @@ class OnboardingPageThree extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: const Color(0xFF47C3DC),
+      body: Stack(
+        children: [
+          Positioned(
+            top: screenHeight * 0.15,
+            left: screenWidth * 0.1,
+            right: screenWidth * 0.1,
+            child: Text(
+              "Set Our App as the Default Browser",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          /// Image with Top Border Radius and White Stroke (Copied from OnboardingPageTwo)
+          Positioned(
+            bottom: screenHeight * 0.0001,
+            left: (screenWidth - 270) / 2,
+            child: Container(
+              width: 270,
+              height: 490,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
+                border: Border(
+                  top: const BorderSide(
+                    color: Colors.white,
+                    width: 5,
+                  ),
+                  left: const BorderSide(
+                    color: Colors.white,
+                    width: 5,
+                  ),
+                  right: const BorderSide(
+                    color: Colors.white,
+                    width: 5,
+                  ),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(25),
+                  topRight: Radius.circular(25),
+                ),
+                child: Image.asset(
+                  'assets/setup.gif',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: Container(
-        height: MediaQuery.of(context).size.height * 0.15,
+        height: screenHeight * 0.15,
         padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
         color: const Color(0xFFCDF7FF),
         child: Row(
@@ -96,7 +155,7 @@ class OnboardingPageThree extends StatelessWidget {
                 "Privacy",
                 style: GoogleFonts.poppins(
                   fontSize: screenWidth * 0.04,
-                  color: Colors.grey,
+                  color: Colors.black,
                 ),
               ),
             ),
@@ -109,8 +168,7 @@ class OnboardingPageThree extends StatelessWidget {
                   width: screenWidth * 0.015,
                   height: screenWidth * 0.015,
                   decoration: BoxDecoration(
-                    color:
-                        index == 2 ? const Color(0xFF47C3DC) : Colors.black12,
+                    color: index == 2 ? const Color(0xFF47C3DC) : Colors.black12,
                     shape: BoxShape.circle,
                   ),
                 );
@@ -118,7 +176,7 @@ class OnboardingPageThree extends StatelessWidget {
             ),
             SizedBox(
               width: screenWidth * 0.35,
-              height: MediaQuery.of(context).size.height * 0.055,
+              height: screenHeight * 0.055,
               child: TextButton(
                 onPressed: () => _showDefaultBrowserDialog(context),
                 style: ButtonStyle(
@@ -132,7 +190,7 @@ class OnboardingPageThree extends StatelessWidget {
                   ),
                   elevation: WidgetStateProperty.all(8),
                   overlayColor: WidgetStateProperty.resolveWith(
-                    (states) => states.contains(WidgetState.pressed)
+                        (states) => states.contains(MaterialState.pressed)
                         ? Colors.white.withOpacity(0.1)
                         : null,
                   ),
