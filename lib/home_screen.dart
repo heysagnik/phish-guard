@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:phisguard/url_safety_screen.dart';
@@ -8,6 +9,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phisguard/Onboarding/onboarding_screen3.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:platform/platform.dart';
+
+class DefaultBrowserChecker {
+  static const platform =
+      MethodChannel('com.phisguard.phisguard/default_browser');
+
+  static Future<bool> isDefaultBrowser() async {
+    try {
+      final bool isDefault = await platform.invokeMethod('isDefaultBrowser');
+      return isDefault;
+    } catch (e) {
+      debugPrint('Error checking default browser: $e');
+      return false;
+    }
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,7 +63,6 @@ class _HomeScreenState extends State<HomeScreen>
   int _totalScans = 0;
   int _safeSites = 0;
   int _dangerousSites = 0;
-  bool _isLoading = false;
   final TextEditingController _urlController = TextEditingController();
 
   // Scroll and animation properties
@@ -103,9 +118,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadScanData() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() {});
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await Future.delayed(const Duration(seconds: 1));
@@ -118,16 +131,31 @@ class _HomeScreenState extends State<HomeScreen>
         _totalScans = prefs.getInt('totalScans') ?? 0;
         _safeSites = prefs.getInt('safeSites') ?? 0;
         _dangerousSites = prefs.getInt('dangerousSites') ?? 0;
-        _isLoading = false;
       });
     }
   }
 
   Future<void> _checkDefaultBrowserStatus() async {
-    // This is a simplified check. You might need to implement a more robust check
     final prefs = await SharedPreferences.getInstance();
+    bool isDefault = prefs.getBool('isDefaultBrowser') ?? false;
+
+    // If not already marked as default in preferences, perform a platform-specific check.
+    if (!isDefault) {
+      if (LocalPlatform().isAndroid) {
+        try {
+          // Use DefaultBrowserChecker to check if our app is set as the default browser.
+          isDefault = await DefaultBrowserChecker.isDefaultBrowser();
+        } catch (e) {
+          debugPrint('Default browser check failed: $e');
+        }
+      } else {
+        // On other platforms, implement your own logic if needed.
+        isDefault = false;
+      }
+    }
+
     setState(() {
-      _isProtected = prefs.getBool('isDefaultBrowser') ?? false;
+      _isProtected = isDefault;
     });
   }
 
@@ -174,18 +202,22 @@ class _HomeScreenState extends State<HomeScreen>
             // Animated Header
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
               height: screenHeight * _headerHeight,
               width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [Color(0xFF1A7BFF), Color(0xFF055FFA)],
                 ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(45)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(_isCollapsed ? 35 : 45),
+                ),
               ),
-              child: Padding(
+              child: AnimatedPadding(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
                 padding: EdgeInsets.symmetric(horizontal: 16)
                     .copyWith(top: _isCollapsed ? 40 : 50),
                 child: Column(
@@ -216,15 +248,15 @@ class _HomeScreenState extends State<HomeScreen>
                           ],
                         ),
                       ),
-
                     // Protection Status Box - Only visible when expanded
                     if (!_isCollapsed) _buildProtectionStatusBox(),
-
                     // Search Bar - Always visible
                     Padding(
                       padding: EdgeInsets.only(top: _isCollapsed ? 0 : 20),
                       child: Center(
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
                           width: 350,
                           height: 47,
                           decoration: BoxDecoration(
