@@ -44,6 +44,7 @@ dependencies:
   platform: ^3.1.6
   permission_handler: ^11.3.1
   shared_preferences: ^2.5.1
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
@@ -72,10 +73,13 @@ flutter:
      - assets/app_logo.json
      - assets/app_logo.png
      - assets/app_logo.svg
+     - assets/icon.png
      - assets/icon1.png
      - assets/icon2.png
      - assets/icon3.png
      - assets/icon4.png
+     - assets/scanning_url.json
+     - assets/shield_animation.json
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
@@ -101,3 +105,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: "AppIcon"
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true

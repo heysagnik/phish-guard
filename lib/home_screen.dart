@@ -1,359 +1,323 @@
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
+import 'package:phisguard/url_safety_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DashboardStats {
-  final int urlsScanned;
-  final int dangerousUrls;
-
-  const DashboardStats({
-    this.urlsScanned = 0,
-    this.dangerousUrls = 0,
-  });
-}
-
-class DefaultBrowserChecker {
-  static const platform =
-      MethodChannel('com.phisguard.phisguard/default_browser');
-
-  static Future<bool> isDefaultBrowser() async {
-    try {
-      final bool isDefault = await platform.invokeMethod('isDefaultBrowser');
-      return isDefault;
-    } catch (e) {
-      debugPrint('Error checking default browser: $e');
-      return false;
-    }
-  }
-}
-
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  late Future<bool> _defaultBrowserCheck;
-  DashboardStats _stats = const DashboardStats();
-  bool _isLoading = true;
+class _HomeScreenState extends State<HomeScreen> {
+  List<String> _recentLinks = [];
+  int _totalScans = 0;
+  int _safeSites = 0;
+  int _dangerousSites = 0;
+  bool _isLoading = false;
+  final TextEditingController _urlController = TextEditingController();
+
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _initializeData();
+    _loadScanData();
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
+  Future<void> _loadScanData() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _initializeData(); // Refresh when app is resumed
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (mounted) {
+      setState(() {
+        List<String> allLinks = prefs.getStringList('recentLinks') ?? [];
+        _recentLinks = allLinks.length > 10 ? allLinks.sublist(0, 10) : allLinks;
+        _totalScans = prefs.getInt('totalScans') ?? 0;
+        _safeSites = prefs.getInt('safeSites') ?? 0;
+        _dangerousSites = prefs.getInt('dangerousSites') ?? 0;
+        _isLoading = false;
+      });
     }
   }
 
-  Future<void> _initializeData() async {
-    setState(() => _isLoading = true);
-    try {
-      _defaultBrowserCheck = DefaultBrowserChecker.isDefaultBrowser();
-      await _loadStats();
-    } catch (e) {
-      debugPrint('Error initializing data: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+  void _scanURL() {
+    String url = _urlController.text.trim();
+
+    if (url.isNotEmpty) {
+      // Ensure the URL starts with HTTP/HTTPS
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://$url'; // Automatically add 'https://' if missing
       }
+
+      // Navigate to URLSafetyScreen with the entered URL
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => URLSafetyScreen(url: url),
+        ),
+      );
+
+      // Clear the input field after scanning
+      _urlController.clear();
     }
   }
 
-  Future<void> _loadStats() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      if (mounted) {
-        setState(() {
-          _stats = DashboardStats(
-            urlsScanned: prefs.getInt('urls_scanned') ?? 0,
-            dangerousUrls: prefs.getInt('dangerous_urls') ?? 0,
-          );
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading stats: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const _LoadingScreen();
-    }
+    double screenHeight = MediaQuery.of(context).size.height;
 
-    return FutureBuilder<bool>(
-      future: _defaultBrowserCheck,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _LoadingScreen();
-        }
-
-        if (snapshot.hasError) {
-          return _ErrorScreen(onRetry: _initializeData);
-        }
-
-        final isDefault = snapshot.data ?? false;
-        if (!isDefault) {
-          return _NotDefaultBrowserScreen(onSetDefault: _initializeData);
-        }
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('PhishGuard Dashboard'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _initializeData,
-              ),
-            ],
-          ),
-          body: SafeArea(
-            child: RefreshIndicator(
-              onRefresh: _initializeData,
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus(); // Dismiss the keyboard
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF021028),
+        body: RefreshIndicator(
+          onRefresh: _loadScanData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: screenHeight),
+              child: Column(
                 children: [
-                  Text(
-                    'Security Statistics',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.link,
-                          title: 'URLs Scanned',
-                          value: _stats.urlsScanned.toString(),
-                          color: Colors.blue,
-                        ),
+                  /// Top Section with Header and Shield Box
+                  Container(
+                    height: screenHeight * 0.5,
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF055FFA),
+                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(45)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(top: 65),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          /// Top Row with "PhishGuard" text and settings icon
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "PhishGuard",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.settings, color: Colors.white, size: 24),
+                                onPressed: () {
+                                  print("Settings pressed");
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 27),
+
+                          /// Box with Lottie animation, title, and description
+                          Center(
+                            child: Container(
+                              width: 350,
+                              height: 135,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF021028),
+                                borderRadius: BorderRadius.circular(17),
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Lottie.asset(
+                                    'assets/shield_animation.json',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                  const SizedBox(width: 16),
+
+                                  /// Title and Description
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          "YOU ARE PROTECTED",
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          "All Shields are active",
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          /// Search Bar Below Box Container
+                          Center(
+                            child: Container(
+                              width: 350,
+                              height: 47,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(40),
+                              ),
+                              child: TextField(
+                                controller: _urlController,
+                                keyboardType: TextInputType.url,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                  prefixIcon: const Icon(Icons.search, color: Colors.black),
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Icons.arrow_forward, color: Colors.black),
+                                    onPressed: _scanURL, // Scan when button is clicked
+                                  ),
+                                  hintText: "Enter link to scan for threats",
+                                  hintStyle: GoogleFonts.poppins(color: Colors.black),
+                                  border: InputBorder.none,
+                                ),
+                                onSubmitted: (_) => _scanURL(), // Scan when user presses Enter
+                              ),
+                            ),
+                          ),
+
+                          /// Scan QR Box Below Search Bar
+                          const SizedBox(height: 15),
+                          Center(
+                            child: Container(
+                              width: 115,
+                              height: 35,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.qr_code_scanner, color: Colors.black, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    "Scan QR",
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          icon: Icons.warning,
-                          title: 'Dangerous Sites',
-                          value: _stats.dangerousUrls.toString(),
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 32),
-                  _SecurityStatusCard(isSecure: isDefault),
+
+                  /// Scan Statistics Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF4D4D4D), width: 2),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _buildStatBox("URL Scanned", _totalScans),
+                          const SizedBox(height: 14),
+                          _buildStatBox("Safe Sites", _safeSites, color: Colors.green),
+                          const SizedBox(height: 14),
+                          _buildStatBox("Dangerous Sites", _dangerousSites, color: Colors.red),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  /// Recent Scans Section
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Recent Scanned URLs",
+                          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        const SizedBox(height: 10),
+                        _recentLinks.isEmpty
+                            ? Center(
+                          child: Text("No recent scans yet.", style: GoogleFonts.poppins(color: Colors.white)),
+                        )
+                            : Column(
+                          children: _recentLinks
+                              .map(
+                                (link) => Card(
+                              color: Colors.white,
+                              margin: const EdgeInsets.symmetric(vertical: 5),
+                              child: ListTile(
+                                leading: const Icon(Icons.link, color: Color(0xFF055FFA)),
+                                title: Text(
+                                  link,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.poppins(fontSize: 16),
+                                ),
+                              ),
+                            ),
+                          )
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-        );
-      },
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final Color color;
-
-  const _StatCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 40, color: color),
-            SizedBox(height: 8), // Added const here
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            SizedBox(height: 4), // Added const here
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-          ],
         ),
       ),
     );
   }
-}
 
-class _SecurityStatusCard extends StatelessWidget {
-  final bool isSecure;
-
-  const _SecurityStatusCard({required this.isSecure});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: isSecure ? Colors.green.shade50 : Colors.orange.shade50,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(
-              isSecure ? Icons.security : Icons.security_update_warning,
-              size: 40,
-              color: isSecure ? Colors.green : Colors.orange,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                isSecure
-                    ? 'Your browsing is protected'
-                    : 'Protection status: Limited',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ],
-        ),
+  /// Helper function to build statistics row
+  Widget _buildStatBox(String label, int value, {Color color = Colors.blue}) {
+    return Container(
+      height: 56,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
       ),
-    );
-  }
-}
-
-class _LoadingScreen extends StatelessWidget {
-  const _LoadingScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Loading dashboard...'),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorScreen extends StatelessWidget {
-  final VoidCallback onRetry;
-
-  const _ErrorScreen({required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text('Failed to load dashboard'),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NotDefaultBrowserScreen extends StatelessWidget {
-  final VoidCallback onSetDefault;
-
-  const _NotDefaultBrowserScreen({required this.onSetDefault});
-
-  Future<void> _launchBrowserSettings() async {
-    const AndroidIntent intent = AndroidIntent(
-      action: 'android.settings.MANAGE_DEFAULT_APPS_SETTINGS',
-    );
-    await intent.launch();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.orange.shade50,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.security_update_warning,
-                size: 80,
-                color: Colors.orange,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Your browsing is not protected',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Set PhishGuard as your default browser to protect against malicious URLs',
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await _launchBrowserSettings();
-                  onSetDefault();
-                },
-                icon: const Icon(Icons.security),
-                label: const Text('Set as Default Browser'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
+          Text(value.toString(), style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        ],
       ),
     );
   }
