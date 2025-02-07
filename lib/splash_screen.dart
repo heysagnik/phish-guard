@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkFirstLaunch() async {
     final prefs = await SharedPreferences.getInstance();
     final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
-    //final isFirstLaunch = true;
+    // final isFirstLaunch = true;
     // Wait for 3 seconds to show the splash screen
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
@@ -44,9 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF055FFA)
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF055FFA)),
         child: Center(
           child: Lottie.asset(
             'assets/app_logo.json',

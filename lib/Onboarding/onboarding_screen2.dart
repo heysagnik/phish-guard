@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phisguard/Onboarding/onboarding_screen3.dart';
@@ -7,130 +9,133 @@ class OnboardingPageTwo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double screenWidth = MediaQuery.of(context).size.width;
+    // Get screen dimensions
+    final size = MediaQuery.of(context).size;
+    final height = size.height;
+    final width = size.width;
+    final isSmallScreen = width < 380;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF352AD6), // Background color
-      body: Stack(
-        children: [
-          /// Title above the image
-          Positioned(
-            top: screenHeight * 0.15,
-            left: screenWidth * 0.1,
-            right: screenWidth * 0.1,
-            child: Text(
-              "Next-Gen Security\nfor a Safer Future",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-
-          /// Image with Top Border Radius and White Stroke
-          Positioned(
-            bottom: screenHeight * 0.0001, // Adjusted to fit above bottom nav
-            left: (screenWidth - 270) / 2, // Centering the image horizontally
-            child: Container(
-              width: 270,
-              height: 490,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                border: Border(
-                  top: const BorderSide(
-                    color: Colors.white, // White stroke on top
-                    width: 5, // Stroke width
-                  ),
-                  left: const BorderSide(
-                    color: Colors.white, // White stroke on left
-                    width: 5, // Stroke width
-                  ),
-                  right: const BorderSide(
-                    color: Colors.white, // White stroke on right
-                    width: 5, // Stroke width
-                  ),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                  topRight: Radius.circular(25),
-                ),
-                child: Image.asset(
-                  'assets/home_screen.png', // Replace with your image path
-                  fit: BoxFit.cover, // Ensures the image covers the given dimensions
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: LayoutBuilder(
-        builder: (context, constraints) {
-          return Container(
-            height: screenHeight * 0.15,
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-            color: const Color(0xFFC8C4FD), // Keeping the original background color
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: const Color(0xFF352AD6),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Column(
               children: [
-                SizedBox(width: screenWidth * 0.28),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: List.generate(3, (index) {
-                    return Container(
-                      margin: EdgeInsets.only(right: screenWidth * 0.01),
-                      width: screenWidth * 0.015,
-                      height: screenWidth * 0.015,
-                      decoration: BoxDecoration(
-                        color: index == 1 ? const Color(0xFF352AD6) : Colors.black12,
-                        shape: BoxShape.circle,
-                      ),
-                    );
-                  }),
-                ),
-                SizedBox(
-                  width: screenWidth * 0.35,
-                  height: screenHeight * 0.055,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => OnboardingPageThree()),
-                      );
-                    },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.all(const Color(0xFF2A35FF)),
-                      shape: WidgetStateProperty.all(
-                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(23)),
-                      ),
-                      elevation: WidgetStateProperty.all(8),
-                      overlayColor: WidgetStateProperty.resolveWith(
-                            (states) => states.contains(MaterialState.pressed)
-                            ? Colors.white.withOpacity(0.1)
-                            : null,
+                // Title Section
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: width * 0.1,
+                      vertical: height * 0.02,
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "Next-Gen Security\nfor a Safer Future",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmallScreen ? 24 : 30,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.2,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      "Let's go",
-                      style: GoogleFonts.poppins(
-                        fontSize: screenWidth * 0.04,
+                  ),
+                ),
+
+                // Image Section
+                Expanded(
+                  flex: 6,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: width * 0.14),
+                    width: min(width * 0.7, 270),
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(30),
+                      ),
+                      border: Border.all(
                         color: Colors.white,
+                        width: width * 0.015,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(25),
+                      ),
+                      child: Image.asset(
+                        'assets/home_screen.png',
+                        fit: BoxFit.fill,
                       ),
                     ),
                   ),
                 ),
               ],
+            );
+          },
+        ),
+      ),
+      bottomNavigationBar: Container(
+        height: height * 0.12,
+        padding: EdgeInsets.symmetric(
+          horizontal: width * 0.05,
+          vertical: height * 0.02,
+        ),
+        color: const Color(0xFFC8C4FD),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            SizedBox(width: width * 0.28),
+
+            // Page Indicators
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                3,
+                (index) => Container(
+                  margin: EdgeInsets.only(right: width * 0.01),
+                  width: width * 0.02,
+                  height: width * 0.02,
+                  decoration: BoxDecoration(
+                    color:
+                        index == 1 ? const Color(0xFF352AD6) : Colors.black12,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
             ),
-          );
-        },
+
+            // Next Button
+            SizedBox(
+              width: width * 0.35,
+              height: height * 0.055,
+              child: ElevatedButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OnboardingPageThree(),
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2A35FF),
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(23),
+                  ),
+                ),
+                child: Text(
+                  "Let's go",
+                  style: GoogleFonts.poppins(
+                    fontSize: isSmallScreen ? 14 : 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

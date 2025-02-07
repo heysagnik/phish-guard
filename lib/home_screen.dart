@@ -1,8 +1,13 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:phisguard/url_safety_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:phisguard/Onboarding/onboarding_screen3.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:platform/platform.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -54,11 +59,13 @@ class _HomeScreenState extends State<HomeScreen>
   // Add these properties to the state class
   double _previousOffset = 0;
   bool _isScrollingUp = false;
+  bool _isProtected = false;
 
   @override
   void initState() {
     super.initState();
     _loadScanData();
+    _checkDefaultBrowserStatus();
     _scrollController.addListener(_onScroll);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -113,6 +120,25 @@ class _HomeScreenState extends State<HomeScreen>
         _dangerousSites = prefs.getInt('dangerousSites') ?? 0;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _checkDefaultBrowserStatus() async {
+    // This is a simplified check. You might need to implement a more robust check
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isProtected = prefs.getBool('isDefaultBrowser') ?? false;
+    });
+  }
+
+  void _handleProtectionCardTap() async {
+    if (!_isProtected) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const OnboardingPageThree(),
+        ),
+      );
     }
   }
 
@@ -192,54 +218,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
 
                     // Protection Status Box - Only visible when expanded
-                    if (!_isCollapsed)
-                      Center(
-                        child: Container(
-                          width: 350,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF021028),
-                            borderRadius: BorderRadius.circular(17),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Lottie.asset(
-                                'assets/shield_animation.json',
-                                width: 100,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "YOU ARE PROTECTED",
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      "All Shields are active",
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    if (!_isCollapsed) _buildProtectionStatusBox(),
 
                     // Search Bar - Always visible
                     Padding(
@@ -569,5 +548,62 @@ class _HomeScreenState extends State<HomeScreen>
       default:
         return Icons.analytics_rounded;
     }
+  }
+
+  Widget _buildProtectionStatusBox() {
+    return GestureDetector(
+      onTap: _handleProtectionCardTap,
+      child: Center(
+        child: Container(
+          width: 350,
+          height: 150,
+          decoration: BoxDecoration(
+            color: const Color(0xFF021028),
+            borderRadius: BorderRadius.circular(17),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Lottie.asset(
+                _isProtected
+                    ? 'assets/shield_animation.json'
+                    : 'assets/warning-animation.json', // Add this animation
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _isProtected ? "YOU ARE PROTECTED" : "YOU ARE AT RISK",
+                      style: GoogleFonts.poppins(
+                        color: _isProtected ? Colors.white : Colors.red,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _isProtected
+                          ? "All Shields are active"
+                          : "Tap to set as default browser",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

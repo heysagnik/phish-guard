@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -61,7 +63,7 @@ class OnboardingPageThree extends StatelessWidget {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const HomeScreen()),
-                      (route) => false,
+                  (route) => false,
                 );
               },
               child: Text(
@@ -80,125 +82,130 @@ class OnboardingPageThree extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final size = MediaQuery.of(context).size;
+    final height = size.height;
+    final width = size.width;
+    final isSmallScreen = width < 380;
 
     return Scaffold(
       backgroundColor: const Color(0xFF47C3DC),
-      body: Stack(
-        children: [
-          Positioned(
-            top: screenHeight * 0.15,
-            left: screenWidth * 0.1,
-            right: screenWidth * 0.1,
-            child: Text(
-              "Set Our App as the Default Browser",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          /// Image with Top Border Radius and White Stroke (Copied from OnboardingPageTwo)
-          Positioned(
-            bottom: screenHeight * 0.0001,
-            left: (screenWidth - 270) / 2,
-            child: Container(
-              width: 270,
-              height: 490,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                border: Border(
-                  top: const BorderSide(
-                    color: Colors.white,
-                    width: 5,
-                  ),
-                  left: const BorderSide(
-                    color: Colors.white,
-                    width: 5,
-                  ),
-                  right: const BorderSide(
-                    color: Colors.white,
-                    width: 5,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                // Title Section
+                Positioned(
+                  top: height * 0.1,
+                  left: width * 0.1,
+                  right: width * 0.1,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      "Set Our App as the\nDefault Browser",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: isSmallScreen ? 24 : 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.2,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                  topRight: Radius.circular(25),
+
+                // Image Section with Responsive Width
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      width: min(width * 0.8, 270),
+                      height: height * 0.6,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(30),
+                        ),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: width * 0.015,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(25),
+                        ),
+                        child: Image.asset(
+                          'assets/setup.gif',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: Image.asset(
-                  'assets/setup.gif',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-        ],
+              ],
+            );
+          },
+        ),
       ),
       bottomNavigationBar: Container(
-        height: screenHeight * 0.15,
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+        height: height * 0.16,
+        padding: EdgeInsets.symmetric(
+          horizontal: width * 0.04,
+          vertical: height * 0.01,
+        ),
         color: const Color(0xFFCDF7FF),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Privacy Button
             TextButton(
               onPressed: () {},
               child: Text(
                 "Privacy",
                 style: GoogleFonts.poppins(
-                  fontSize: screenWidth * 0.04,
+                  fontSize: isSmallScreen ? 12 : 14,
                   color: Colors.black,
                 ),
               ),
             ),
+
+            // Page Indicators
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: List.generate(3, (index) {
-                return Container(
-                  margin: EdgeInsets.only(right: screenWidth * 0.01),
-                  width: screenWidth * 0.015,
-                  height: screenWidth * 0.015,
+              children: List.generate(
+                3,
+                (index) => Container(
+                  margin: EdgeInsets.only(right: width * 0.01),
+                  width: width * 0.02,
+                  height: width * 0.02,
                   decoration: BoxDecoration(
-                    color: index == 2 ? const Color(0xFF47C3DC) : Colors.black12,
+                    color:
+                        index == 2 ? const Color(0xFF47C3DC) : Colors.black12,
                     shape: BoxShape.circle,
                   ),
-                );
-              }),
+                ),
+              ),
             ),
+
+            // Set as Default Button
             SizedBox(
-              width: screenWidth * 0.35,
-              height: screenHeight * 0.055,
-              child: TextButton(
+              width: width * 0.40,
+              height: height * 0.055,
+              child: ElevatedButton(
                 onPressed: () => _showDefaultBrowserDialog(context),
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(
-                    const Color(0xFF2A35FF),
-                  ),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(23),
-                    ),
-                  ),
-                  elevation: WidgetStateProperty.all(8),
-                  overlayColor: WidgetStateProperty.resolveWith(
-                        (states) => states.contains(MaterialState.pressed)
-                        ? Colors.white.withOpacity(0.1)
-                        : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2A35FF),
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(23),
                   ),
                 ),
                 child: Text(
                   "Set as default",
                   style: GoogleFonts.poppins(
-                    fontSize: screenWidth * 0.04,
+                    fontSize: isSmallScreen ? 12 : 14,
                     color: Colors.white,
                   ),
                 ),

@@ -316,7 +316,8 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                         'Open in Browser',
                         Icons.travel_explore_outlined,
                         () => _launchUrl(
-                          Uri.parse(widget.url),
+                          Uri.parse(
+                              'googlechrome://navigate?url=${Uri.encodeFull(widget.url)}'),
                           context,
                         ),
                         backgroundColor: Color(0xFF055FFA),
@@ -445,43 +446,47 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   /// Function to launch URLs safely
   Future<void> _launchUrl(Uri uri, BuildContext context) async {
     try {
-      // Try to open in Chrome on Android.
-      if (Platform.isAndroid &&
+      if ((Platform.isAndroid || Platform.isIOS) &&
           (uri.scheme == 'https' || uri.scheme == 'http')) {
-        final chromeUrl = uri
-            .toString()
-            .replaceFirst(RegExp(r'^https?://'), 'googlechrome://');
-        final chromeUri = Uri.parse(chromeUrl);
+        Uri? chromeUri;
+        if (Platform.isAndroid) {
+          final chromeUrl =
+              'googlechrome://navigate?url=${Uri.encodeFull(uri.toString())}';
+          chromeUri = Uri.parse(chromeUrl);
+        } else if (Platform.isIOS) {
+          // For iOS, use 'googlechrome' for http and 'googlechromes' for https URLs.
+          final chromeUrl = uri.scheme == 'http'
+              ? uri.toString().replaceFirst('http', 'googlechrome')
+              : uri.toString().replaceFirst('https', 'googlechromes');
+          chromeUri = Uri.parse(chromeUrl);
+        }
 
-        if (await canLaunchUrl(chromeUri)) {
+        if (chromeUri != null && await canLaunchUrl(chromeUri)) {
           await launchUrl(chromeUri, mode: LaunchMode.externalApplication);
-          return; // Exit early if Chrome successfully launches.
+          return;
         }
       }
 
-      // Fallback to default browser or user choice.
-      final bool launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!launched) {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw Exception('Could not launch $uri');
       }
     } catch (e) {
       debugPrint('Error launching URL: $e');
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Failed to open the URL. Please try again.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+      if (!context.mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('Failed to open the URL. Please try again.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
