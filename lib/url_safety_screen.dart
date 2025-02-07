@@ -15,10 +15,11 @@ class URLSafetyScreen extends StatefulWidget {
   _URLSafetyScreenState createState() => _URLSafetyScreenState();
 }
 
+// Update _URLSafetyScreenState class to include URLSafetyResponse
 class _URLSafetyScreenState extends State<URLSafetyScreen> {
-  late Future<bool> _safetyFuture;
-  bool _isSafe = true;
+  late Future<URLSafetyResponse> _safetyFuture;
   bool _isLoading = true;
+  URLSafetyResponse? _response;
 
   @override
   void initState() {
@@ -26,14 +27,13 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     _startScan();
   }
 
-  /// Start URL safety scan and update UI
   void _startScan() {
-    _safetyFuture = URLSafety.isURLSafe(widget.url);
-    _safetyFuture.then((value) {
+    _safetyFuture = URLSafety.checkURL(widget.url);
+    _safetyFuture.then((response) {
       setState(() {
-        _isSafe = value;
+        _response = response;
         _startAnimation();
-        _saveScanResult(widget.url, value);
+        _saveScanResult(widget.url, !response.isMalicious);
       });
     });
   }
@@ -78,32 +78,22 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF2A35FF),
-              Color(0xFF536DFE),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: _isLoading
-                ? _buildLoadingWidget()
-                : FutureBuilder<bool>(
-              future: _safetyFuture,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return _buildErrorWidget(snapshot.error.toString());
-                }
-                return _buildResultWidget();
-              },
-            ),
-          ),
+      body: SafeArea(
+        bottom: false,
+        top: false,
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: _isLoading
+              ? _buildLoadingWidget()
+              : FutureBuilder<URLSafetyResponse>(
+                  future: _safetyFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return _buildErrorWidget(snapshot.error.toString());
+                    }
+                    return _buildResultWidget();
+                  },
+                ),
         ),
       ),
     );
@@ -111,27 +101,55 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
 
   /// Loading animation while scanning
   Widget _buildLoadingWidget() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Lottie.asset(
-            'assets/scanning_url.json',
-            width: 150,
-            height: 150,
-            fit: BoxFit.contain,
-            animate: true,
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Scanning URL...',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF055FFA),
+            Color(0xFF0B41B3),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Lottie.asset(
+              'assets/scanning_url.json',
+              width: 200,
+              height: 200,
+              fit: BoxFit.contain,
+              animate: true,
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0, end: 1),
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeInOut,
+              builder: (context, value, child) {
+                int dotCount = (value * 3).round();
+                return Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()..scale(1 + 0.05 * value),
+                  child: Text(
+                    'Scanning URL${'.' * dotCount}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
+              onEnd: () {
+                // Trigger a rebuild to continuously repeat the animation.
+                setState(() {});
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -174,94 +192,252 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
 
   /// Scan result UI
   Widget _buildResultWidget() {
+    if (_response == null) return const SizedBox();
 
-    final chromeUrl =
-        'googlechrome://navigate?url=${Uri.encodeFull(widget.url)}';
-    return Center(
-      child: Card(
-        color: Colors.white,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _isSafe ? Icons.security : Icons.warning,
-                size: 64,
-                color: _isSafe ? Colors.green : Colors.red,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                _isSafe ? 'URL is Safe' : 'Suspicious URL Detected!',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: _isSafe ? Colors.green : Colors.red,
+    final isSafe = !_response!.isMalicious &&
+        !_response!.googleMalicious &&
+        !_response!.isNewlyListed;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF5F7FF),
+            Colors.white,
+          ],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              children: [
+                // Rest of the widget remains the same
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => SystemNavigator.pop(),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
+
+                Column(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: isSafe ? Colors.green : Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isSafe ? Icons.verified_user : Icons.warning,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      isSafe ? 'URL is Safe' : 'Suspicious URL Detected!',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                        color: isSafe ? Colors.green : Colors.red,
+                      ),
+                    ),
+                    Text(
+                      'Scan completed successfully',
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  widget.url,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.grey[800],
+
+                const SizedBox(height: 30),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildDetailRow('Domain', _response!.domain,
+                            canCopy: true),
+                        _buildDetailRow(
+                            'Domain Age', '${_response!.domainAgeDays} days'),
+                        _buildDetailRow('Category', _response!.siteCategory),
+                        _buildDetailRow(
+                          'Status',
+                          isSafe ? 'Safe' : 'Unsafe',
+                          isSuccess: isSafe,
+                        ),
+                        _buildDetailRow(
+                          'Newly Listed',
+                          _response!.isNewlyListed ? 'Yes' : 'No',
+                          isWarning: _response!.isNewlyListed,
+                        ),
+                        _buildDetailRow(
+                          'Malicious Content',
+                          _response!.isMalicious ? 'Yes' : 'No',
+                          isWarning: _response!.isMalicious,
+                        ),
+                        _buildDetailRow(
+                          'Google Safe Browsing',
+                          _response!.googleMalicious ? 'Unsafe' : 'Safe',
+                          isSuccess: !_response!.googleMalicious,
+                        ),
+                        if (_response!.hasRedirects) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'Redirects',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          ..._response!.redirects
+                              .map((redirect) => _buildRedirectRow(redirect)),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              if (_isSafe)
-                _buildButton(
-                  'Open in Browser',
-                      () => _launchUrl(Uri.parse(chromeUrl), context),
-                  color: Colors.green,
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        'Open in Browser',
+                        Icons.travel_explore_outlined,
+                        () => _launchUrl(
+                          Uri.parse(widget.url),
+                          context,
+                        ),
+                        backgroundColor: Color(0xFF055FFA),
+                      ),
+                    ),
+                  ],
                 ),
-              const SizedBox(height: 12),
-              _buildButton(
-                'Go Back',
-                  () {
-                  if(Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  } else {
-                    SystemNavigator.pop();
-                  }
-                  },
-                outlined: true
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// Generic button widget
-  Widget _buildButton(String text, VoidCallback onPressed,
-      {bool outlined = false, Color? color}) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: outlined ? Colors.white : (color ?? const Color(0xFF2A35FF)),
-          foregroundColor: outlined ? const Color(0xFF2A35FF) : Colors.white,
-          elevation: outlined ? 0 : 4,
-          side: outlined ? const BorderSide(color: Color(0xFF2A35FF)) : null,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool canCopy = false,
+    bool isSuccess = false,
+    bool isWarning = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+          Row(
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  color: isSuccess
+                      ? Colors.green
+                      : (isWarning ? Colors.red : Colors.black),
+                  fontWeight: (isSuccess || isWarning)
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                  fontSize: 14,
+                ),
+              ),
+              if (canCopy) ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: Icon(Icons.copy, size: 16, color: Colors.grey[600]),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: value));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Copied to clipboard')),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRedirectRow(String redirect) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          const Icon(Icons.arrow_forward, size: 16, color: Colors.grey),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              redirect,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    String text,
+    IconData icon,
+    VoidCallback onPressed, {
+    bool isOutlined = false,
+    Color? backgroundColor,
+  }) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+            isOutlined ? Colors.white : (backgroundColor ?? Colors.black),
+        foregroundColor: isOutlined ? Colors.black : Colors.white,
+        side: isOutlined ? BorderSide(color: Colors.grey[300]!) : null,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Text(
-          text,
-          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: isOutlined ? Colors.black : Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -285,7 +461,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
 
       // Fallback to default browser or user choice.
       final bool launched =
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched) {
         throw Exception('Could not launch $uri');
       }
@@ -307,5 +483,32 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
         );
       }
     }
+  }
+
+  Widget _buildButton(String text, VoidCallback onPressed,
+      {Color? color, bool outlined = false}) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              outlined ? Colors.transparent : (color ?? Colors.blue),
+          foregroundColor: outlined ? Colors.white : null,
+          side: outlined ? const BorderSide(color: Colors.white) : null,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
   }
 }
