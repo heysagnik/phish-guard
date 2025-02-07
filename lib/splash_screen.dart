@@ -45,14 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF2C2C54), // Darker purple-blue
-              Color(0xFF4A148C), // Darker purple
-            ],
-          ),
+          color: Color(0xFF055FFA)
         ),
         child: Center(
           child: Lottie.asset(

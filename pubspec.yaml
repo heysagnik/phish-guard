@@ -80,6 +80,8 @@ flutter:
      - assets/icon4.png
      - assets/scanning_url.json
      - assets/shield_animation.json
+     - assets/home_screen.png
+     - assets/setup.gif
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
