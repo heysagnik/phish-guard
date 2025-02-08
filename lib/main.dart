@@ -45,10 +45,11 @@ class _MyAppState extends State<MyApp> {
     _appLinks = AppLinks();
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       debugPrint('onAppLink: $uri');
-      _navigatorKey.currentState?.push(
+      _navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => URLSafetyScreen(url: uri.toString()),
         ),
+        (Route<dynamic> route) => false,
       );
     });
   }

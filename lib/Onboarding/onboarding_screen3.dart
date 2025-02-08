@@ -94,11 +94,11 @@ class OnboardingPageThree extends StatelessWidget {
           builder: (context, constraints) {
             return Stack(
               children: [
-                // Title Section
+                // Title Section - Adjusted top padding
                 Positioned(
-                  top: height * 0.1,
-                  left: width * 0.1,
-                  right: width * 0.1,
+                  top: height * 0.08, // Reduced from 0.1
+                  left: width * 0.08, // Reduced from 0.1
+                  right: width * 0.08, // Reduced from 0.1
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
@@ -114,22 +114,23 @@ class OnboardingPageThree extends StatelessWidget {
                   ),
                 ),
 
-                // Image Section with Responsive Width
+                // Image Section - Increased width and adjusted margins
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Container(
-                      width: min(width * 0.8, 270),
-                      height: height * 0.6,
+                      width:
+                          min(width * 0.8, 350), // Increased from 0.8 and 270
+                      height: height * 0.65, // Increased from 0.6
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.vertical(
                           top: Radius.circular(30),
                         ),
                         border: Border.all(
                           color: Colors.white,
-                          width: width * 0.015,
+                          width: width * 0.01, // Reduced from 0.015
                         ),
                       ),
                       child: ClipRRect(
@@ -149,11 +150,12 @@ class OnboardingPageThree extends StatelessWidget {
           },
         ),
       ),
+      // Bottom Navigation - Adjusted height and padding
       bottomNavigationBar: Container(
-        height: height * 0.16,
+        height: height * 0.12, // Reduced from 0.16
         padding: EdgeInsets.symmetric(
-          horizontal: width * 0.04,
-          vertical: height * 0.01,
+          horizontal: width * 0.04, // Reduced from 0.04
+          vertical: height * 0.015, // Adjusted from 0.01
         ),
         color: const Color(0xFFCDF7FF),
         child: Row(
@@ -171,15 +173,16 @@ class OnboardingPageThree extends StatelessWidget {
               ),
             ),
 
-            // Page Indicators
+            // Page Indicators - Adjusted size
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 3,
                 (index) => Container(
-                  margin: EdgeInsets.only(right: width * 0.01),
-                  width: width * 0.02,
-                  height: width * 0.02,
+                  margin: EdgeInsets.only(
+                      right: width * 0.008), // Reduced from 0.01
+                  width: width * 0.02, // Reduced from 0.02
+                  height: width * 0.02, // Reduced from 0.02
                   decoration: BoxDecoration(
                     color:
                         index == 2 ? const Color(0xFF47C3DC) : Colors.black12,
@@ -189,10 +192,10 @@ class OnboardingPageThree extends StatelessWidget {
               ),
             ),
 
-            // Set as Default Button
+            // Set as Default Button - Adjusted width
             SizedBox(
-              width: width * 0.40,
-              height: height * 0.055,
+              width: width * 0.38, // Reduced from 0.40
+              height: height * 0.05, // Reduced from 0.055
               child: ElevatedButton(
                 onPressed: () => _showDefaultBrowserDialog(context),
                 style: ElevatedButton.styleFrom(

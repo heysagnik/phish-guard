@@ -9,7 +9,6 @@ class OnboardingPageTwo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
@@ -22,13 +21,13 @@ class OnboardingPageTwo extends StatelessWidget {
           builder: (context, constraints) {
             return Column(
               children: [
-                // Title Section
+                // Title Section with reduced padding
                 Expanded(
                   flex: 2,
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                      horizontal: width * 0.1,
-                      vertical: height * 0.02,
+                      horizontal: width * 0.08, // Reduced from 0.1
+                      vertical: height * 0.015, // Reduced from 0.02
                     ),
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -46,19 +45,21 @@ class OnboardingPageTwo extends StatelessWidget {
                   ),
                 ),
 
-                // Image Section
+                // Image Section with increased width
                 Expanded(
                   flex: 6,
                   child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: width * 0.14),
-                    width: min(width * 0.7, 270),
+                    margin: EdgeInsets.symmetric(
+                      horizontal: width * 0.08, // Reduced from 0.14
+                    ),
+                    width: min(width * 0.9, 350), // Increased from 0.7 and 270
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(30),
                       ),
                       border: Border.all(
                         color: Colors.white,
-                        width: width * 0.015,
+                        width: width * 0.01, // Reduced from 0.015
                       ),
                     ),
                     child: ClipRRect(
@@ -67,7 +68,7 @@ class OnboardingPageTwo extends StatelessWidget {
                       ),
                       child: Image.asset(
                         'assets/home_screen.png',
-                        fit: BoxFit.fill,
+                        fit: BoxFit.cover, // Changed from fill
                       ),
                     ),
                   ),
@@ -77,27 +78,29 @@ class OnboardingPageTwo extends StatelessWidget {
           },
         ),
       ),
+      // Bottom Navigation with adjusted spacing
       bottomNavigationBar: Container(
-        height: height * 0.12,
+        height: height * 0.11, // Reduced from 0.12
         padding: EdgeInsets.symmetric(
-          horizontal: width * 0.05,
-          vertical: height * 0.02,
+          horizontal: width * 0.04, // Reduced from 0.05
+          vertical: height * 0.015, // Reduced from 0.02
         ),
         color: const Color(0xFFC8C4FD),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            SizedBox(width: width * 0.28),
+            SizedBox(width: width * 0.25), // Reduced from 0.28
 
-            // Page Indicators
+            // Page Indicators with adjusted size
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 3,
                 (index) => Container(
-                  margin: EdgeInsets.only(right: width * 0.01),
-                  width: width * 0.02,
-                  height: width * 0.02,
+                  margin: EdgeInsets.only(
+                      right: width * 0.008), // Reduced from 0.01
+                  width: width * 0.018, // Reduced from 0.02
+                  height: width * 0.018, // Reduced from 0.02
                   decoration: BoxDecoration(
                     color:
                         index == 1 ? const Color(0xFF352AD6) : Colors.black12,
@@ -107,10 +110,10 @@ class OnboardingPageTwo extends StatelessWidget {
               ),
             ),
 
-            // Next Button
+            // Next Button with adjusted size
             SizedBox(
-              width: width * 0.35,
-              height: height * 0.055,
+              width: width * 0.32, // Reduced from 0.35
+              height: height * 0.05, // Reduced from 0.055
               child: ElevatedButton(
                 onPressed: () => Navigator.push(
                   context,

@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -76,12 +78,14 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isScrollingUp = false;
   bool _isProtected = false;
   double _spinAngle = 0.0;
+  Timer? _browserCheckTimer;
 
   @override
   void initState() {
     super.initState();
     _loadScanData();
     _checkDefaultBrowserStatus();
+    _startPeriodicCheck();
     _scrollController.addListener(_onScroll);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -89,8 +93,16 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  void _startPeriodicCheck() {
+    // Check every 2 seconds
+    _browserCheckTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      _checkDefaultBrowserStatus();
+    });
+  }
+
   @override
   void dispose() {
+    _browserCheckTimer?.cancel();
     _scrollController.dispose();
     _animationController.dispose();
     super.dispose();
@@ -135,27 +147,21 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _checkDefaultBrowserStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    bool isDefault = prefs.getBool('isDefaultBrowser') ?? false;
+    if (!mounted) return;
 
-    // If not already marked as default in preferences, perform a platform-specific check.
-    if (!isDefault) {
-      if (LocalPlatform().isAndroid) {
-        try {
-          // Use DefaultBrowserChecker to check if our app is set as the default browser.
-          isDefault = await DefaultBrowserChecker.isDefaultBrowser();
-        } catch (e) {
-          debugPrint('Default browser check failed: $e');
+    bool isDefault = false;
+    if (LocalPlatform().isAndroid) {
+      try {
+        isDefault = await DefaultBrowserChecker.isDefaultBrowser();
+        if (mounted && isDefault != _isProtected) {
+          setState(() {
+            _isProtected = isDefault;
+          });
         }
-      } else {
-        // On other platforms, implement your own logic if needed.
-        isDefault = false;
+      } catch (e) {
+        debugPrint('Default browser check failed: $e');
       }
     }
-
-    setState(() {
-      _isProtected = isDefault;
-    });
   }
 
   void _handleProtectionCardTap() async {

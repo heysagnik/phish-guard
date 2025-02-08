@@ -30,11 +30,19 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   void _startScan() {
     _safetyFuture = URLSafety.checkURL(widget.url);
     _safetyFuture.then((response) {
-      setState(() {
-        _response = response;
-        _startAnimation();
-        _saveScanResult(widget.url, !response.isMalicious);
-      });
+      if (mounted) {
+        setState(() {
+          _response = response;
+          _isLoading = false;
+          _saveScanResult(widget.url, !response.isMalicious);
+        });
+      }
+    }).catchError((error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     });
   }
 
@@ -66,15 +74,6 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     await prefs.setInt('dangerousSites', dangerousSites);
   }
 
-  /// Simulate scanning animation before showing results
-  void _startAnimation() {
-    Future.delayed(const Duration(seconds: 5), () {
-      setState(() {
-        _isLoading = false;
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,17 +82,19 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
         top: false,
         child: SizedBox(
           height: MediaQuery.of(context).size.height,
-          child: _isLoading
-              ? _buildLoadingWidget()
-              : FutureBuilder<URLSafetyResponse>(
-                  future: _safetyFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return _buildErrorWidget(snapshot.error.toString());
-                    }
-                    return _buildResultWidget();
-                  },
-                ),
+          child: FutureBuilder<URLSafetyResponse>(
+            future: _safetyFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _buildLoadingWidget();
+              } else if (snapshot.hasError) {
+                return _buildErrorWidget(snapshot.error.toString());
+              } else if (snapshot.hasData) {
+                return _buildResultWidget();
+              }
+              return const SizedBox();
+            },
+          ),
         ),
       ),
     );
@@ -102,13 +103,13 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   /// Loading animation while scanning
   Widget _buildLoadingWidget() {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF055FFA),
-            Color(0xFF0B41B3),
+            Color(0xFF021028), // Dark blue background
+            Color(0xFF05182E),
           ],
         ),
       ),
@@ -158,7 +159,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   Widget _buildErrorWidget(String error) {
     return Center(
       child: Card(
-        color: Colors.white,
+        color: const Color(0xFF021028),
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
@@ -173,13 +174,14 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 error,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(color: Colors.grey[600]),
+                style: GoogleFonts.poppins(color: Colors.grey[400]),
               ),
               const SizedBox(height: 24),
               _buildButton('Try Again', _startScan),
@@ -199,13 +201,13 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
         !_response!.isNewlyListed;
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFF5F7FF),
-            Colors.white,
+            Color(0xFF021028), // Dark blue background
+            Color(0xFF05182E),
           ],
         ),
       ),
@@ -216,13 +218,14 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
             padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
-                // Rest of the widget remains the same
+                // Update close button to only pop the current screen
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => SystemNavigator.pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => SystemNavigator
+                          .pop(), // Changed from SystemNavigator.pop()
                     ),
                   ],
                 ),
@@ -254,7 +257,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                     Text(
                       'Scan completed successfully',
                       style: GoogleFonts.poppins(
-                        color: Colors.grey[600],
+                        color: Colors.grey[400],
                         fontSize: 16,
                       ),
                     ),
@@ -320,7 +323,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                               'googlechrome://navigate?url=${Uri.encodeFull(widget.url)}'),
                           context,
                         ),
-                        backgroundColor: Color(0xFF055FFA),
+                        backgroundColor: const Color(0xFF1A7BFF),
                       ),
                     ),
                   ],
@@ -348,7 +351,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
           Text(
             label,
             style: GoogleFonts.poppins(
-              color: Colors.grey[600],
+              color: Colors.grey[400],
               fontSize: 14,
             ),
           ),
@@ -359,7 +362,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                 style: GoogleFonts.poppins(
                   color: isSuccess
                       ? Colors.green
-                      : (isWarning ? Colors.red : Colors.black),
+                      : (isWarning ? Colors.red : Colors.white),
                   fontWeight: (isSuccess || isWarning)
                       ? FontWeight.w600
                       : FontWeight.normal,
@@ -369,11 +372,14 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
               if (canCopy) ...[
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: Icon(Icons.copy, size: 16, color: Colors.grey[600]),
+                  icon: Icon(Icons.copy, size: 16, color: Colors.grey[400]),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: value));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Copied to clipboard')),
+                      SnackBar(
+                        content: const Text('Copied to clipboard'),
+                        backgroundColor: const Color(0xFF1A7BFF),
+                      ),
                     );
                   },
                 ),

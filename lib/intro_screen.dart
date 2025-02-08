@@ -33,6 +33,11 @@ class _IntroPageState extends State<IntroPage>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+    final isSmallScreen = width < 380;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -48,53 +53,65 @@ class _IntroPageState extends State<IntroPage>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: const [
-                      Color(0xFF7B1FA2), // Deep Purple
-                      Color(0xFF6A1B9A),
-                      Color(0xFF4A148C),
-                      Color(0xFF4527A0), // Indigo
-                      Color(0xFF311B92),
+                      Color(0xFF352AD6), // Match app theme
+                      Color(0xFF2A35FF),
+                      Color(0xFF1A7BFF),
+                      Color(0xFF055FFA),
+                      Color(0xFF47C3DC),
                     ],
-                    stops: [
-                      0.0,
-                      0.25,
-                      0.5,
-                      0.75,
-                      1.0,
-                    ],
+                    stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
                     transform: GradientRotation(_animation.value * 0.1),
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      'assets/app_logo.svg',
-                      height: 150,
-                    ),
-                    const SizedBox(height: 50),
-                    Text(
-                      'Guard your clicks,\nprotect your device.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(2, 2),
-                            blurRadius: 4,
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                          Shadow(
-                            offset: const Offset(-1, -1),
-                            blurRadius: 4,
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                        ],
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Logo with animation
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0.8, end: 1.0),
+                        duration: const Duration(seconds: 2),
+                        curve: Curves.easeOutBack,
+                        builder: (context, double value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: child,
+                          );
+                        },
+                        child: SvgPicture.asset(
+                          'assets/app_logo.svg',
+                          height: height * 0.2,
+                        ),
                       ),
-                    ),
-                  ],
+
+                      SizedBox(height: height * 0.06),
+
+                      // Tagline with improved typography
+                      Text(
+                        'Guard your clicks,\nprotect your device.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: isSmallScreen ? 28 : 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.2,
+                          shadows: [
+                            Shadow(
+                              offset: const Offset(2, 2),
+                              blurRadius: 4,
+                              color: Colors.black.withOpacity(0.3),
+                            ),
+                            Shadow(
+                              offset: const Offset(-1, -1),
+                              blurRadius: 4,
+                              color: Colors.black.withOpacity(0.3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
