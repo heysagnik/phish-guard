@@ -1,11 +1,21 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Import services for SystemChrome.
 import 'package:app_links/app_links.dart';
 import 'package:phisguard/splash_screen.dart';
 import 'package:phisguard/url_safety_screen.dart';
 
-void main() => runApp(const MyApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Inverse the status bar theme: use light icons on a dark status bar background.
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    // Optionally set a background color if desired:
+    statusBarColor: Colors.black,
+  ));
+  runApp(const MyApp());
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -35,11 +45,10 @@ class _MyAppState extends State<MyApp> {
     _appLinks = AppLinks();
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
       debugPrint('onAppLink: $uri');
-      _navigatorKey.currentState?.pushAndRemoveUntil(
+      _navigatorKey.currentState?.push(
         MaterialPageRoute(
           builder: (context) => URLSafetyScreen(url: uri.toString()),
         ),
-        (Route<dynamic> route) => false,
       );
     });
   }

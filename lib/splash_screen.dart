@@ -44,7 +44,16 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(color: Color(0xFF055FFA)),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF2C2C54), // Darker purple-blue
+              Color(0xFF4A148C), // Darker purple
+            ],
+          ),
+        ),
         child: Center(
           child: Lottie.asset(
             'assets/app_logo.json',

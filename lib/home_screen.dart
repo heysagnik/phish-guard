@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   // Scroll and animation properties
   final ScrollController _scrollController = ScrollController();
-  double _headerHeight = 0.47;
+  double _headerHeight = 0.41;
   bool _isCollapsed = false;
   late AnimationController _animationController;
 
@@ -75,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen>
   double _previousOffset = 0;
   bool _isScrollingUp = false;
   bool _isProtected = false;
+  double _spinAngle = 0.0;
 
   @override
   void initState() {
@@ -95,21 +96,19 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  // Replace the existing _onScroll method with this version
   void _onScroll() {
-    // Determine scroll direction
     _isScrollingUp = _scrollController.offset < _previousOffset;
 
     if (_scrollController.offset > 100 && !_isCollapsed && !_isScrollingUp) {
       setState(() {
         _isCollapsed = true;
-        _headerHeight = 0.15; // Collapsed height
+        _headerHeight = 0.14;
       });
       _animationController.forward();
     } else if (_isScrollingUp && _isCollapsed) {
       setState(() {
         _isCollapsed = false;
-        _headerHeight = 0.47; // Expanded height
+        _headerHeight = 0.41;
       });
       _animationController.reverse();
     }
@@ -220,110 +219,124 @@ class _HomeScreenState extends State<HomeScreen>
                 curve: Curves.easeInOut,
                 padding: EdgeInsets.symmetric(horizontal: 16)
                     .copyWith(top: _isCollapsed ? 40 : 50),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title and Settings - Only visible when expanded
-                    if (!_isCollapsed)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "PhishGuard",
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.settings,
-                                  color: Colors.white, size: 24),
-                              onPressed: () {
-                                debugPrint("Settings pressed");
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Protection Status Box - Only visible when expanded
-                    if (!_isCollapsed) _buildProtectionStatusBox(),
-                    // Search Bar - Always visible
-                    Padding(
-                      padding: EdgeInsets.only(top: _isCollapsed ? 0 : 20),
-                      child: Center(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                          width: 350,
-                          height: 47,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(40),
-                            boxShadow: [
-                              if (_urlController.text.isNotEmpty ||
-                                  FocusScope.of(context).hasFocus)
-                                BoxShadow(
-                                  color: const Color(0xFF055FFA),
-                                  blurRadius: 15,
-                                  spreadRadius: 2,
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title and Settings - Only visible when expanded
+                      if (!_isCollapsed)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "PhishGuard",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
                                 ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _spinAngle += 1.0; // one full rotation
+                                  });
+                                  debugPrint("Settings pressed");
+                                },
+                                child: AnimatedRotation(
+                                  turns: _spinAngle,
+                                  duration: const Duration(milliseconds: 500),
+                                  child: const Icon(
+                                    Icons.settings,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          child: Focus(
-                            onFocusChange: (hasFocus) {
-                              setState(() {});
-                            },
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _urlController,
-                                    keyboardType: TextInputType.url,
-                                    decoration: InputDecoration(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              vertical: 14, horizontal: 16),
-                                      prefixIcon: const Icon(Icons.search,
-                                          color: Colors.black),
-                                      hintText: "Type a URL to scan...",
-                                      hintStyle: GoogleFonts.poppins(
-                                          color: Colors.black54),
-                                      border: InputBorder.none,
-                                    ),
-                                    onSubmitted: (_) => _scanURL(),
+                        ),
+                      // Protection Status Box - Only visible when expanded
+                      if (!_isCollapsed) _buildProtectionStatusBox(),
+                      // Search Bar - Always visible
+                      Padding(
+                        padding: EdgeInsets.only(top: _isCollapsed ? 0 : 20),
+                        child: Center(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            width: 350,
+                            height: 47,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(40),
+                              boxShadow: [
+                                if (_urlController.text.isNotEmpty ||
+                                    FocusScope.of(context).hasFocus)
+                                  BoxShadow(
+                                    color: const Color(0xFF055FFA),
+                                    blurRadius: 15,
+                                    spreadRadius: 2,
                                   ),
-                                ),
-                                Container(
-                                  height: 47,
-                                  decoration: const BoxDecoration(),
-                                  child: Row(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                            Icons.photo_camera_outlined,
-                                            color: Colors.black),
-                                        onPressed: () {
-                                          debugPrint("QR Scan pressed");
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.arrow_forward,
-                                            color: Colors.black),
-                                        onPressed: _scanURL,
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ],
+                            ),
+                            child: Focus(
+                              onFocusChange: (hasFocus) {
+                                setState(() {});
+                              },
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _urlController,
+                                      keyboardType: TextInputType.url,
+                                      decoration: InputDecoration(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                vertical: 14, horizontal: 16),
+                                        prefixIcon: const Icon(Icons.search,
+                                            color: Colors.black),
+                                        hintText: "Type a URL to scan...",
+                                        hintStyle: GoogleFonts.poppins(
+                                            color: Colors.black54),
+                                        border: InputBorder.none,
+                                      ),
+                                      onSubmitted: (_) => _scanURL(),
+                                    ),
+                                  ),
+                                  Container(
+                                    height: 47,
+                                    decoration: const BoxDecoration(),
+                                    child: Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                              Icons.photo_camera_outlined,
+                                              color: Colors.black),
+                                          onPressed: () {
+                                            debugPrint("QR Scan pressed");
+                                          },
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.arrow_forward,
+                                              color: Colors.black),
+                                          onPressed: _scanURL,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -588,24 +601,24 @@ class _HomeScreenState extends State<HomeScreen>
       child: Center(
         child: Container(
           width: 350,
-          height: 150,
+          height: 120,
           decoration: BoxDecoration(
             color: const Color(0xFF021028),
             borderRadius: BorderRadius.circular(17),
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Lottie.asset(
                 _isProtected
                     ? 'assets/shield_animation.json'
-                    : 'assets/warning-animation.json', // Add this animation
-                width: 100,
-                height: 100,
+                    : 'assets/warning-animation.json',
+                width: 80,
+                height: 80,
                 fit: BoxFit.cover,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,18 +628,18 @@ class _HomeScreenState extends State<HomeScreen>
                       _isProtected ? "YOU ARE PROTECTED" : "YOU ARE AT RISK",
                       style: GoogleFonts.poppins(
                         color: _isProtected ? Colors.white : Colors.red,
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       _isProtected
                           ? "All Shields are active"
                           : "Tap to set as default browser",
                       style: GoogleFonts.poppins(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 14,
                       ),
                     ),
                   ],
