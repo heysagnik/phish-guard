@@ -38,11 +38,6 @@ class URLSafetyResponse {
 }
 
 class URLSafety {
-  static const apiKey = 'AIzaSyDNc4dV2hcxkpFGmCn1jmIhfq0UaSNpjRw';
-  static const clientId =
-      '208397729537-qruu6dk9l8gdrqdp1fu1apa2a437rilo.apps.googleusercontent.com';
-  static const clientVersion = '1.0.0';
-
   static Future<URLSafetyResponse> checkURL(String url) async {
     try {
       final encodedUrl = Uri.encodeComponent(url);

@@ -9,7 +9,6 @@ import 'package:lottie/lottie.dart';
 import 'package:phisguard/url_safety_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phisguard/Onboarding/onboarding_screen3.dart';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:platform/platform.dart';
 
 class DefaultBrowserChecker {
