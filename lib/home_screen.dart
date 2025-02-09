@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:phisguard/url_details_page.dart';
 import 'package:phisguard/url_safety_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phisguard/Onboarding/onboarding_screen3.dart';
@@ -481,18 +482,12 @@ class _HomeScreenState extends State<HomeScreen>
                                           ],
                                         ),
                                         child: ListTile(
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 8,
-                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                           leading: Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF055FFA)
-                                                  .withOpacity(0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                              color: const Color(0xFF055FFA).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: const Icon(
                                               Icons.link_rounded,
@@ -512,6 +507,14 @@ class _HomeScreenState extends State<HomeScreen>
                                             size: 16,
                                             color: Color(0xFF055FFA),
                                           ),
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => UrlDetailsPage(url: _recentLinks[index]),
+                                              ),
+                                            );
+                                          },
                                         ),
                                       );
                                     },
