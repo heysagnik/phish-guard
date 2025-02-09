@@ -226,7 +226,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                         IconButton(
                           padding: EdgeInsets.zero,
                           icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => SystemNavigator.pop(),
+                          onPressed: () => _handleBackNavigation(),
                         ),
                         IconButton(
                           padding: EdgeInsets.zero,
@@ -611,6 +611,14 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     );
   }
 
+  void _handleBackNavigation() {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      SystemNavigator.pop();
+    }
+  }
+
   Future<void> _launchUrl(Uri uri, BuildContext context) async {
     try {
       if ((Platform.isAndroid || Platform.isIOS) &&
@@ -785,7 +793,7 @@ Message: ${_response!.summary.message}
                     }
                     final emailBody = reportText + additionalDetails;
                     final emailUrl =
-                        'mailto:sahoosagnik1@gmail.com?subject=${Uri.encodeComponent("URL Report: ${widget.url}")}&body=${Uri.encodeComponent(emailBody)}';
+                        'mailto:io.sakshamgupta@gmail.com?subject=${Uri.encodeComponent("URL Report: ${widget.url}")}&body=${Uri.encodeComponent(emailBody)}';
                     final Uri emailLaunchUri = Uri.parse(emailUrl);
 
                     try {
