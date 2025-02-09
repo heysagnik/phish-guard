@@ -128,16 +128,13 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _loadScanData() async {
-    setState(() {});
-
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1)); // Simulate loading delay
 
     if (mounted) {
       setState(() {
         List<String> allLinks = prefs.getStringList('recentLinks') ?? [];
-        _recentLinks =
-            allLinks.length > 10 ? allLinks.sublist(0, 10) : allLinks;
+        _recentLinks = allLinks.length > 10 ? allLinks.sublist(0, 10) : allLinks;
         _totalScans = prefs.getInt('totalScans') ?? 0;
         _safeSites = prefs.getInt('safeSites') ?? 0;
         _dangerousSites = prefs.getInt('dangerousSites') ?? 0;
@@ -187,7 +184,10 @@ class _HomeScreenState extends State<HomeScreen>
         MaterialPageRoute(
           builder: (context) => URLSafetyScreen(url: url),
         ),
-      );
+      ).then((_) {
+        // Reload data when returning to the HomeScreen
+        _loadScanData();
+      });
 
       _urlController.clear();
     }

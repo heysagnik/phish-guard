@@ -54,6 +54,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     int safeSites = prefs.getInt('safeSites') ?? 0;
     int dangerousSites = prefs.getInt('dangerousSites') ?? 0;
 
+    // Add the URL to recent links if it doesn't already exist
     if (!recentLinks.contains(url)) {
       recentLinks.insert(0, url);
       if (recentLinks.length > 10) {
@@ -61,6 +62,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
       }
     }
 
+    // Update counters
     totalScans += 1;
     if (isSafe) {
       safeSites += 1;
@@ -68,6 +70,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
       dangerousSites += 1;
     }
 
+    // Save updated data to SharedPreferences
     await prefs.setStringList('recentLinks', recentLinks);
     await prefs.setInt('totalScans', totalScans);
     await prefs.setInt('safeSites', safeSites);
@@ -220,13 +223,27 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
               children: [
                 // Update close button to only pop the current screen
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => SystemNavigator
                           .pop(), // Changed from SystemNavigator.pop()
                     ),
+                    IconButton(
+                      onPressed: () {
+                        // Log the report action
+                        debugPrint('URL Reported: ${widget.url}');
+                        // Show a confirmation message (optional)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('URL Reported: ${widget.url}'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.thumbs_up_down, color: Colors.white),
+                    )
                   ],
                 ),
 
@@ -328,11 +345,110 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 10), // Spacing between buttons
+
+                // More Info button
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        'More Info',
+                        Icons.info_outline,
+                            () {
+                          // Add functionality for the "More Info" button
+                          _showMoreInfoBottomSheet(context);
+                        },
+                        backgroundColor: Colors.grey[800]!,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _showMoreInfoBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent, // Transparent background for the modal
+      isScrollControlled: true, // Allows the bottom sheet to take up more space
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF021028), // Dark blue background
+                Color(0xFF05182E),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(20), // Rounded top corners
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Fit content height
+            children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[700],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'More Information',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Content
+              Text(
+                'Here you can provide additional details about the URL, such as its reputation, history, or other relevant information.',
+                style: GoogleFonts.poppins(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+
+              // Additional details (example)
+              _buildDetailRow('Domain', _response!.domain, canCopy: true),
+              _buildDetailRow('Category', _response!.siteCategory),
+              _buildDetailRow(
+                'Google Safe Browsing',
+                _response!.googleMalicious ? 'Unsafe' : 'Safe',
+                isSuccess: !_response!.googleMalicious,
+              ),
+              const SizedBox(height: 24),
+
+              // Close button
+              _buildActionButton(
+                'Close',
+                Icons.close,
+                    () => Navigator.pop(context),
+                backgroundColor: const Color(0xFF1A7BFF), // Matching blue color
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

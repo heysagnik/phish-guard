@@ -26,7 +26,7 @@ class URLSafetyResponse {
   factory URLSafetyResponse.fromJson(Map<String, dynamic> json) {
     return URLSafetyResponse(
       domain: json['domain'] ?? '',
-      domainAgeDays: json['domain_age_days'] ?? 1000,
+      domainAgeDays: int.tryParse(json['domain_age_days'].toString()) ?? 1000,
       isNewlyListed: json['is_newly_listed'] ?? false,
       isMalicious: json['is_malicious'] ?? false,
       googleMalicious: json['google_malicious'] ?? false,

@@ -53,14 +53,11 @@ class OnboardingPageTwo extends StatelessWidget {
                       horizontal: width * 0.08, // Reduced from 0.14
                     ),
                     width: min(width * 0.9, 350), // Increased from 0.7 and 270
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.vertical(
                         top: Radius.circular(30),
                       ),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: width * 0.01, // Reduced from 0.015
-                      ),
+                      // Removed the border property
                     ),
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(
@@ -68,7 +65,8 @@ class OnboardingPageTwo extends StatelessWidget {
                       ),
                       child: Image.asset(
                         'assets/home_screen.png',
-                        fit: BoxFit.cover, // Changed from fill
+                        fit: BoxFit.cover, // Covers the container, cropping if necessary
+                        alignment: Alignment.topCenter, // Ensures the top part is always visible
                       ),
                     ),
                   ),
@@ -96,14 +94,14 @@ class OnboardingPageTwo extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 3,
-                (index) => Container(
+                    (index) => Container(
                   margin: EdgeInsets.only(
                       right: width * 0.008), // Reduced from 0.01
                   width: width * 0.018, // Reduced from 0.02
                   height: width * 0.018, // Reduced from 0.02
                   decoration: BoxDecoration(
                     color:
-                        index == 1 ? const Color(0xFF352AD6) : Colors.black12,
+                    index == 1 ? const Color(0xFF352AD6) : Colors.black12,
                     shape: BoxShape.circle,
                   ),
                 ),
