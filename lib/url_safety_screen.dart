@@ -226,7 +226,7 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                         IconButton(
                           padding: EdgeInsets.zero,
                           icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => SystemNavigator.pop(),
                         ),
                         IconButton(
                           padding: EdgeInsets.zero,
@@ -237,28 +237,34 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // Header with icon and message
+                    // Header with icon, animated score and message
                     Column(
                       children: [
-                        Container(
-                          width: isSmallScreen ? 60 : 80,
-                          height: isSmallScreen ? 60 : 80,
-                          decoration: BoxDecoration(
-                            color: isSafe ? Colors.green : Colors.red,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                spreadRadius: 2,
-                                blurRadius: 8,
-                              )
-                            ],
-                          ),
-                          child: Icon(
-                            isSafe ? Icons.verified_user : Icons.warning,
-                            color: Colors.white,
-                            size: isSmallScreen ? 30 : 40,
-                          ),
+                        // Container(
+                        //   width: isSmallScreen ? 60 : 80,
+                        //   height: isSmallScreen ? 60 : 80,
+                        //   decoration: BoxDecoration(
+                        //     color: isSafe ? Colors.green : Colors.red,
+                        //     shape: BoxShape.circle,
+                        //     boxShadow: [
+                        //       BoxShadow(
+                        //         color: Colors.black.withOpacity(0.3),
+                        //         spreadRadius: 2,
+                        //         blurRadius: 8,
+                        //       )
+                        //     ],
+                        //   ),
+                        //   child: Icon(
+                        //     isSafe ? Icons.verified_user : Icons.warning,
+                        //     color: Colors.white,
+                        //     size: isSmallScreen ? 30 : 40,
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 16),
+                        // Animated circular progress displaying the risk score.
+                        AnimatedRiskScore(
+                          overallRiskScore: _response!.overallRiskScore,
+                          isSafe: isSafe,
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -755,9 +761,31 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     final reportText = reportController.text;
-                    // Removed the extra "//" after mailto:
+                    String additionalDetails = '';
+                    if (_response != null) {
+                      additionalDetails = '''
+      
+URL: ${widget.url}
+Domain: ${_response!.domain}
+Domain Age Days: ${_response!.domainAgeDays}
+Is Newly Listed: ${_response!.isNewlyListed}
+Google Safe Browsing: ${!_response!.googleMalicious}
+Safe Browsing Details: ${_response!.safeBrowsingDetails ?? 'N/A'}
+Site Category: ${_response!.siteCategory}
+Gemini Details: ${_response!.geminiDetails ?? 'N/A'}
+AI Safe: ${_response!.geminiSafe}
+Has Redirects: ${_response!.hasRedirects}
+Content Analysis Score: ${_response!.contentAnalysisScore?.toString() ?? 'N/A'}
+Has Phishing Indicators: ${_response!.hasPhishingIndicators}
+Overall Risk Score: ${_response!.overallRiskScore}
+Threat Level: ${_response!.summary.threatLevel}
+Is Really Safe: ${_response!.summary.isReallySafe}
+Message: ${_response!.summary.message}
+''';
+                    }
+                    final emailBody = reportText + additionalDetails;
                     final emailUrl =
-                        'mailto:sahoosagnik1@gmail.com?subject=URL Report: ${Uri.encodeComponent(widget.url)}&body=${Uri.encodeComponent(reportText)}';
+                        'mailto:sahoosagnik1@gmail.com?subject=${Uri.encodeComponent("URL Report: ${widget.url}")}&body=${Uri.encodeComponent(emailBody)}';
                     final Uri emailLaunchUri = Uri.parse(emailUrl);
 
                     try {
@@ -794,114 +822,271 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   }
 }
 
-class GeminiContentAnimation extends StatefulWidget {
+class GeminiContentAnimation extends StatelessWidget {
   final String text;
   const GeminiContentAnimation({super.key, required this.text});
 
   @override
-  _GeminiContentAnimationState createState() => _GeminiContentAnimationState();
-}
-
-class _GeminiContentAnimationState extends State<GeminiContentAnimation>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late Animation<int> _characterCount;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller =
-        AnimationController(duration: const Duration(seconds: 4), vsync: this);
-    _characterCount = StepTween(begin: 0, end: widget.text.length).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-    _controller.forward();
-  }
-
-  @override
-  void didUpdateWidget(covariant GeminiContentAnimation oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.text != widget.text) {
-      _controller.reset();
-      _characterCount = StepTween(begin: 0, end: widget.text.length).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-      );
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _characterCount,
-      builder: (context, child) {
-        final currentText = widget.text
-            .substring(0, _characterCount.value.clamp(0, widget.text.length));
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                ),
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    // Heading AI Overview
-                    Row(
-                      children: [
-                        Image.asset(
-                          'assets/gemini.png',
-                          width: 24,
-                          height: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'AI Overview',
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+                    ShaderMask(
+                      shaderCallback: (Rect bounds) {
+                        return const LinearGradient(
+                          colors: [Colors.deepPurpleAccent, Colors.blue],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ).createShader(bounds);
+                      },
+                      child: const Icon(
+                        Icons.psychology_alt_outlined,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    // Animated content text
+                    const SizedBox(width: 8),
                     Text(
-                      currentText,
+                      'Think\u207A',
                       style: GoogleFonts.poppins(
-                          fontSize: 16, color: Colors.white),
-                    ),
-                    const SizedBox(height: 8),
-                    // Caution message
-                    Text(
-                      'Ai generated content may not be accurate',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                        color: Colors.white70,
+                        fontSize: 20,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  text,
+                  style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'contents may not be accurate',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontStyle: FontStyle.normal,
+                    color: Colors.white38,
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class AnimatedRiskScore extends StatelessWidget {
+  final int overallRiskScore;
+  final bool isSafe;
+
+  const AnimatedRiskScore({
+    super.key,
+    required this.overallRiskScore,
+    required this.isSafe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final int score = 100 - overallRiskScore;
+    final double progress = score / 100;
+    final Color themeColor = isSafe ? Colors.green : Colors.redAccent;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: progress),
+      duration: const Duration(milliseconds: 1500),
+      curve: Curves.easeInOutCubic,
+      builder: (context, value, child) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Outer glow
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: themeColor.withOpacity(0.3),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+            ),
+            // Rotating outer ring
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0, end: 2 * 3.14159),
+              duration: const Duration(seconds: 3),
+              curve: Curves.linear,
+              builder: (context, rotation, child) {
+                return Transform.rotate(
+                  angle: rotation,
+                  child: Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: SweepGradient(
+                        colors: [
+                          themeColor.withOpacity(0.1),
+                          themeColor.withOpacity(0.3),
+                          themeColor.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Inner content
+            Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    themeColor.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.7, 1.0],
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 110,
+              height: 110,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Main progress indicator
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 1500),
+                    builder: (context, opacity, child) {
+                      return CustomPaint(
+                        painter: CircularProgressPainter(
+                          progress: value,
+                          color: themeColor.withOpacity(opacity),
+                          backgroundColor: Colors.grey[850]!,
+                          strokeWidth: 12,
+                        ),
+                      );
+                    },
+                  ),
+                  Center(
+                    child: Container(
+                      width: 75,
+                      height: 75,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withOpacity(0.95),
+                            Colors.white.withOpacity(0.85),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: themeColor.withOpacity(0.3),
+                            blurRadius: 12,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: TweenAnimationBuilder<int>(
+                          tween: IntTween(begin: 0, end: score),
+                          duration: const Duration(milliseconds: 1500),
+                          builder: (context, value, child) {
+                            return Text(
+                              '$value',
+                              style: GoogleFonts.poppins(
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
   }
+}
+
+class CircularProgressPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color backgroundColor;
+  final double strokeWidth;
+
+  CircularProgressPainter({
+    required this.progress,
+    required this.color,
+    required this.backgroundColor,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Draw background circle
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = backgroundColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth,
+    );
+
+    // Draw progress arc
+    final progressPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -90 * (3.14159 / 180), // Start from top (90 degrees)
+      progress * 2 * 3.14159, // Full circle is 2*PI radians
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
