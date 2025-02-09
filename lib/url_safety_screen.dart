@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -46,7 +48,6 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     });
   }
 
-  /// Save scan results in SharedPreferences
   Future<void> _saveScanResult(String url, bool isSafe) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> recentLinks = prefs.getStringList('recentLinks') ?? [];
@@ -54,7 +55,6 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     int safeSites = prefs.getInt('safeSites') ?? 0;
     int dangerousSites = prefs.getInt('dangerousSites') ?? 0;
 
-    // Add the URL to recent links if it doesn't already exist
     if (!recentLinks.contains(url)) {
       recentLinks.insert(0, url);
       if (recentLinks.length > 10) {
@@ -62,7 +62,6 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
       }
     }
 
-    // Update counters
     totalScans += 1;
     if (isSafe) {
       safeSites += 1;
@@ -70,7 +69,6 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
       dangerousSites += 1;
     }
 
-    // Save updated data to SharedPreferences
     await prefs.setStringList('recentLinks', recentLinks);
     await prefs.setInt('totalScans', totalScans);
     await prefs.setInt('safeSites', safeSites);
@@ -80,10 +78,10 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
-        bottom: false,
-        top: false,
         child: SizedBox(
+          width: double.infinity,
           height: MediaQuery.of(context).size.height,
           child: FutureBuilder<URLSafetyResponse>(
             future: _safetyFuture,
@@ -103,17 +101,16 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     );
   }
 
-  /// Loading animation while scanning
   Widget _buildLoadingWidget() {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
+          colors: [
+            Color(0xFF1E293B),
+            Color(0xFF0F172A),
+          ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF021028), // Dark blue background
-            Color(0xFF05182E),
-          ],
         ),
       ),
       child: Center(
@@ -122,10 +119,8 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
           children: [
             Lottie.asset(
               'assets/scanning_url.json',
-              width: 200,
-              height: 200,
-              fit: BoxFit.contain,
-              animate: true,
+              width: 180,
+              height: 180,
             ),
             const SizedBox(height: 24),
             TweenAnimationBuilder<double>(
@@ -134,22 +129,20 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
               curve: Curves.easeInOut,
               builder: (context, value, child) {
                 int dotCount = (value * 3).round();
-                return Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()..scale(1 + 0.05 * value),
+                return Transform.scale(
+                  scale: 1 + 0.05 * value,
                   child: Text(
                     'Scanning URL${'.' * dotCount}',
                     style: GoogleFonts.poppins(
                       fontSize: 20,
-                      color: Colors.white,
                       fontWeight: FontWeight.w500,
+                      color: Colors.white,
                     ),
                   ),
                 );
               },
               onEnd: () {
-                // Trigger a rebuild to continuously repeat the animation.
-                setState(() {});
+                setState(() {}); // trigger continuous animation
               },
             ),
           ],
@@ -158,19 +151,20 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     );
   }
 
-  /// Error UI if scan fails
   Widget _buildErrorWidget(String error) {
     return Center(
       child: Card(
-        color: const Color(0xFF021028),
-        elevation: 8,
+        color: const Color(0xFF1E293B),
+        elevation: 12,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.symmetric(horizontal: 24),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const Icon(Icons.error_outline,
+                  size: 64, color: Colors.redAccent),
               const SizedBox(height: 16),
               Text(
                 'Error scanning URL',
@@ -195,178 +189,202 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     );
   }
 
-  /// Scan result UI
   Widget _buildResultWidget() {
     if (_response == null) return const SizedBox();
 
-    final isSafe = !_response!.isMalicious &&
-        !_response!.googleMalicious &&
-        !_response!.isNewlyListed;
+    final isSafe = _response!.summary.isReallySafe;
+    debugPrint('URL: ${widget.url} is safe: $isSafe  Response: $_response');
 
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
+          colors: [
+            Color(0xFF1E293B),
+            Color(0xFF0F172A),
+          ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF021028), // Dark blue background
-            Color(0xFF05182E),
-          ],
         ),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                // Update close button to only pop the current screen
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => SystemNavigator
-                          .pop(), // Changed from SystemNavigator.pop()
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        // Log the report action
-                        debugPrint('URL Reported: ${widget.url}');
-                        // Show a confirmation message (optional)
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('URL Reported: ${widget.url}'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.thumbs_up_down, color: Colors.white),
-                    )
-                  ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmallScreen = constraints.maxWidth < 600;
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 12 : 20,
+                  vertical: isSmallScreen ? 12 : 20,
                 ),
-
-                Column(
+                child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: isSafe ? Colors.green : Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        isSafe ? Icons.verified_user : Icons.warning,
-                        color: Colors.white,
-                        size: 40,
+                    // Modern app bar
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.thumbs_up_down_outlined,
+                              color: Colors.white),
+                          onPressed: () => _showReportDialog(context),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Header with icon and message
+                    Column(
+                      children: [
+                        Container(
+                          width: isSmallScreen ? 60 : 80,
+                          height: isSmallScreen ? 60 : 80,
+                          decoration: BoxDecoration(
+                            color: isSafe ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 8,
+                              )
+                            ],
+                          ),
+                          child: Icon(
+                            isSafe ? Icons.verified_user : Icons.warning,
+                            color: Colors.white,
+                            size: isSmallScreen ? 30 : 40,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _response!.summary.message,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: isSmallScreen ? 20 : 24,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isSafe ? Colors.greenAccent : Colors.redAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Scan completed successfully',
+                          style: GoogleFonts.poppins(
+                            fontSize: isSmallScreen ? 14 : 16,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Main content scroll view
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            GeminiContentAnimation(
+                                text: _response!.geminiDetails ?? ''),
+                            const SizedBox(height: 16),
+                            _buildDetailRow(
+                                'Category', _response!.siteCategory),
+                            if (_response!.hasRedirects) ...[
+                              const SizedBox(height: 16),
+                              Text(
+                                'Redirects',
+                                style: GoogleFonts.poppins(
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.grey[900],
+                                ),
+                                child: ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _response!.redirects.length,
+                                  itemBuilder: (context, index) {
+                                    final redirect =
+                                        _response!.redirects[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 8),
+                                      child: Text(
+                                        redirect,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Text(
-                      isSafe ? 'URL is Safe' : 'Suspicious URL Detected!',
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: isSafe ? Colors.green : Colors.red,
-                      ),
-                    ),
-                    Text(
-                      'Scan completed successfully',
-                      style: GoogleFonts.poppins(
-                        color: Colors.grey[400],
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 30),
-
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
+                    // Action buttons
+                    Row(
                       children: [
-                        _buildDetailRow('Domain', _response!.domain,
-                            canCopy: true),
-                        _buildDetailRow(
-                            'Domain Age', '${_response!.domainAgeDays} days'),
-                        _buildDetailRow('Category', _response!.siteCategory),
-                        _buildDetailRow(
-                          'Status',
-                          isSafe ? 'Safe' : 'Unsafe',
-                          isSuccess: isSafe,
+                        Expanded(
+                          child: isSafe
+                              ? _buildActionButton(
+                                  'Open in Browser',
+                                  icon: Icons.travel_explore_outlined,
+                                  onPressed: () => _launchUrl(
+                                    Uri.parse(
+                                        'googlechrome://navigate?url=${Uri.encodeFull(widget.url)}'),
+                                    context,
+                                  ),
+                                  backgroundColor: const Color(0xFF1A7BFF),
+                                )
+                              : _buildActionButton(
+                                  'Proceed anyway',
+                                  icon: Icons.travel_explore_outlined,
+                                  onPressed: () => _launchUrl(
+                                    Uri.parse(
+                                        'googlechrome://navigate?url=${Uri.encodeFull(widget.url)}'),
+                                    context,
+                                  ),
+                                  backgroundColor: Colors.redAccent,
+                                ),
                         ),
-                        _buildDetailRow(
-                          'Newly Listed',
-                          _response!.isNewlyListed ? 'Yes' : 'No',
-                          isWarning: _response!.isNewlyListed,
-                        ),
-                        _buildDetailRow(
-                          'Malicious Content',
-                          _response!.isMalicious ? 'Yes' : 'No',
-                          isWarning: _response!.isMalicious,
-                        ),
-                        _buildDetailRow(
-                          'Google Safe Browsing',
-                          _response!.googleMalicious ? 'Unsafe' : 'Safe',
-                          isSuccess: !_response!.googleMalicious,
-                        ),
-                        if (_response!.hasRedirects) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            'Redirects',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          ..._response!.redirects
-                              .map((redirect) => _buildRedirectRow(redirect)),
-                        ],
                       ],
                     ),
-                  ),
-                ),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildActionButton(
-                        'Open in Browser',
-                        Icons.travel_explore_outlined,
-                        () => _launchUrl(
-                          Uri.parse(
-                              'googlechrome://navigate?url=${Uri.encodeFull(widget.url)}'),
-                          context,
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionButton(
+                            'More Info',
+                            icon: Icons.info_outline,
+                            onPressed: () {
+                              _showMoreInfoBottomSheet(context);
+                            },
+                            backgroundColor: Colors.grey[800]!,
+                          ),
                         ),
-                        backgroundColor: const Color(0xFF1A7BFF),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 10), // Spacing between buttons
-
-                // More Info button
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildActionButton(
-                        'More Info',
-                        Icons.info_outline,
-                            () {
-                          // Add functionality for the "More Info" button
-                          _showMoreInfoBottomSheet(context);
-                        },
-                        backgroundColor: Colors.grey[800]!,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -374,189 +392,211 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
   void _showMoreInfoBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Transparent background for the modal
-      isScrollControlled: true, // Allows the bottom sheet to take up more space
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF021028), // Dark blue background
-                Color(0xFF05182E),
-              ],
+        final isSmallScreen = MediaQuery.of(context).size.width < 600;
+        return FractionallySizedBox(
+          heightFactor: 0.8,
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF1E293B),
+                  Color(0xFF0F172A),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
             ),
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(20), // Rounded top corners
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 16 : 24,
+              vertical: 16,
             ),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Fit content height
-            children: [
-              // Drag handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[700],
-                  borderRadius: BorderRadius.circular(2),
-                ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[700],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(height: isSmallScreen ? 16 : 20),
+                  Text(
+                    'More Information',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 18 : 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Additional details about the URL\'s reputation and history',
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey[400],
+                      fontSize: isSmallScreen ? 12 : 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: isSmallScreen ? 12 : 16),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          _buildDetailRow('Domain', _response!.domain,
+                              canCopy: true),
+                          _buildDetailRow(
+                              'Domain Age Days', _response!.domainAgeDays),
+                          _buildDetailRow('Is Newly Listed',
+                              _response!.isNewlyListed.toString()),
+                          _buildDetailRow('Google Safe Browsing',
+                              (!_response!.googleMalicious).toString()),
+                          if (_response!.safeBrowsingDetails != null)
+                            _buildDetailRow('Safe Browsing Details',
+                                _response!.safeBrowsingDetails!),
+                          _buildDetailRow(
+                              'Site Category', _response!.siteCategory),
+                          if (_response!.geminiDetails != null)
+                            _buildDetailRow(
+                                'AI Safe', _response!.geminiSafe.toString()),
+                          _buildDetailRow('Has Redirects',
+                              _response!.hasRedirects.toString()),
+                          if (_response!.contentAnalysisScore != null)
+                            _buildDetailRow('Content Analysis Score',
+                                _response!.contentAnalysisScore.toString()),
+                          _buildDetailRow('Has Phishing Indicators',
+                              _response!.hasPhishingIndicators.toString()),
+                          _buildDetailRow('Overall Risk Score',
+                              _response!.overallRiskScore.toString()),
+                          _buildDetailRow(
+                              'Threat Level', _response!.summary.threatLevel),
+                          _buildDetailRow('Is Really Safe',
+                              _response!.summary.isReallySafe.toString()),
+                          SizedBox(height: isSmallScreen ? 10 : 16),
+                          Text(
+                            _response!.summary.message,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: _response!.summary.isReallySafe
+                                  ? Colors.greenAccent
+                                  : Colors.redAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: isSmallScreen ? 20 : 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: isSmallScreen ? 8 : 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionButton(
+                          'Close',
+                          backgroundColor: const Color(0xFF1A7BFF),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-
-              // Title
-              Text(
-                'More Information',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Content
-              Text(
-                'Here you can provide additional details about the URL, such as its reputation, history, or other relevant information.',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-
-              // Additional details (example)
-              _buildDetailRow('Domain', _response!.domain, canCopy: true),
-              _buildDetailRow('Category', _response!.siteCategory),
-              _buildDetailRow(
-                'Google Safe Browsing',
-                _response!.googleMalicious ? 'Unsafe' : 'Safe',
-                isSuccess: !_response!.googleMalicious,
-              ),
-              const SizedBox(height: 24),
-
-              // Close button
-              _buildActionButton(
-                'Close',
-                Icons.close,
-                    () => Navigator.pop(context),
-                backgroundColor: const Color(0xFF1A7BFF), // Matching blue color
-              ),
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildDetailRow(
-    String label,
-    String value, {
-    bool canCopy = false,
-    bool isSuccess = false,
-    bool isWarning = false,
-  }) {
+  Widget _buildDetailRow(String label, String value,
+      {bool canCopy = false, bool isSuccess = false, bool isWarning = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              color: Colors.grey[400],
-              fontSize: 14,
-            ),
-          ),
-          Row(
-            children: [
-              Text(
-                value,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final double fontSize = constraints.maxWidth < 400 ? 14 : 16;
+        return Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Text(
+                label,
                 style: GoogleFonts.poppins(
-                  color: isSuccess
-                      ? Colors.green
-                      : (isWarning ? Colors.red : Colors.white),
-                  fontWeight: (isSuccess || isWarning)
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                  fontSize: 14,
+                  fontSize: fontSize,
+                  color: Colors.white,
                 ),
               ),
-              if (canCopy) ...[
-                const SizedBox(width: 4),
-                IconButton(
-                  icon: Icon(Icons.copy, size: 16, color: Colors.grey[400]),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: value));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Copied to clipboard'),
-                        backgroundColor: const Color(0xFF1A7BFF),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRedirectRow(String redirect) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          const Icon(Icons.arrow_forward, size: 16, color: Colors.grey),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              redirect,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
-      ),
+            Expanded(
+              flex: 4,
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.bold,
+                  color: isSuccess
+                      ? Colors.greenAccent
+                      : isWarning
+                          ? Colors.orangeAccent
+                          : Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 
   Widget _buildActionButton(
-    String text,
-    IconData icon,
-    VoidCallback onPressed, {
+    String text, {
+    IconData? icon,
+    required VoidCallback onPressed,
     bool isOutlined = false,
     Color? backgroundColor,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double fontSize = screenWidth < 350 ? 14 : 16;
+    double iconSize = screenWidth < 350 ? 18 : 20;
+    EdgeInsetsGeometry padding = screenWidth < 350
+        ? const EdgeInsets.symmetric(vertical: 12)
+        : const EdgeInsets.symmetric(vertical: 16);
+
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor:
-            isOutlined ? Colors.white : (backgroundColor ?? Colors.black),
+            isOutlined ? Colors.white : backgroundColor ?? Colors.black,
         foregroundColor: isOutlined ? Colors.black : Colors.white,
         side: isOutlined ? BorderSide(color: Colors.grey[300]!) : null,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: padding,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20, color: isOutlined ? Colors.black : Colors.white),
-          const SizedBox(width: 8),
+          if (icon != null) ...[
+            Icon(icon,
+                size: iconSize,
+                color: isOutlined ? Colors.black : Colors.white),
+            const SizedBox(width: 8),
+          ],
           Text(
             text,
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: fontSize,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -565,7 +605,6 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
     );
   }
 
-  /// Function to launch URLs safely
   Future<void> _launchUrl(Uri uri, BuildContext context) async {
     try {
       if ((Platform.isAndroid || Platform.isIOS) &&
@@ -576,13 +615,11 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
               'googlechrome://navigate?url=${Uri.encodeFull(uri.toString())}';
           chromeUri = Uri.parse(chromeUrl);
         } else if (Platform.isIOS) {
-          // For iOS, use 'googlechrome' for http and 'googlechromes' for https URLs.
           final chromeUrl = uri.scheme == 'http'
               ? uri.toString().replaceFirst('http', 'googlechrome')
               : uri.toString().replaceFirst('https', 'googlechromes');
           chromeUri = Uri.parse(chromeUrl);
         }
-
         if (chromeUri != null && await canLaunchUrl(chromeUri)) {
           await launchUrl(chromeUri, mode: LaunchMode.externalApplication);
           return;
@@ -630,12 +667,241 @@ class _URLSafetyScreenState extends State<URLSafetyScreen> {
         ),
         child: Text(
           text,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    TextEditingController reportController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          backgroundColor: const Color(0xFF1E293B),
+          titlePadding: EdgeInsets.zero,
+          title: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: const Text(
+                  'Report URL',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Enter details for the report:',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: reportController,
+                maxLines: 3,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Describe the issue',
+                  hintStyle: const TextStyle(color: Colors.white70),
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withAlpha(128)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white.withAlpha(128)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.blueAccent),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // TextButton(
+                //   onPressed: () => Navigator.pop(context),
+                //   style: TextButton.styleFrom(foregroundColor: Colors.white),
+                //   child: const Text('Cancel'),
+                // ),
+                // const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () async {
+                    final reportText = reportController.text;
+                    // Removed the extra "//" after mailto:
+                    final emailUrl =
+                        'mailto:sahoosagnik1@gmail.com?subject=URL Report: ${Uri.encodeComponent(widget.url)}&body=${Uri.encodeComponent(reportText)}';
+                    final Uri emailLaunchUri = Uri.parse(emailUrl);
+
+                    try {
+                      if (await canLaunchUrl(emailLaunchUri)) {
+                        await launchUrl(emailLaunchUri,
+                            mode: LaunchMode.externalApplication);
+                      } else {
+                        throw 'Could not launch email client';
+                      }
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to open email client: $e'),
+                        ),
+                      );
+                    }
+
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1A7BFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Send'),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class GeminiContentAnimation extends StatefulWidget {
+  final String text;
+  const GeminiContentAnimation({super.key, required this.text});
+
+  @override
+  _GeminiContentAnimationState createState() => _GeminiContentAnimationState();
+}
+
+class _GeminiContentAnimationState extends State<GeminiContentAnimation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late Animation<int> _characterCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(duration: const Duration(seconds: 4), vsync: this);
+    _characterCount = StepTween(begin: 0, end: widget.text.length).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(covariant GeminiContentAnimation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _controller.reset();
+      _characterCount = StepTween(begin: 0, end: widget.text.length).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      );
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _characterCount,
+      builder: (context, child) {
+        final currentText = widget.text
+            .substring(0, _characterCount.value.clamp(0, widget.text.length));
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 2.0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Heading AI Overview
+                    Row(
+                      children: [
+                        Image.asset(
+                          'assets/gemini.png',
+                          width: 24,
+                          height: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'AI Overview',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Animated content text
+                    Text(
+                      currentText,
+                      style: GoogleFonts.poppins(
+                          fontSize: 16, color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    // Caution message
+                    Text(
+                      'Ai generated content may not be accurate',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
